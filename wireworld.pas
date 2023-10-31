@@ -30,6 +30,8 @@ type
     state: CellState;
     /// новое состояние
     newState: CellState;
+    /// флаг изменения состояния
+    changed: boolean;
     /// соседи
     neighbors: array [1..8] of Cell;
 
@@ -104,26 +106,30 @@ type
               if neighbors[i].state = signal then
                 inc(count);
             if (count = 1) or (count = 2) then
-              newState := signal
-            else
-              newState := wire;
+              newState := signal;
           end;
         signal: newState := signal_tail;
         signal_tail: newState := wire;
       end;
     end;
 
-    /// состояние изменилось?
-    function stateChanged: boolean;
+    /// применить новое состояние
+    procedure applyNewState;
     begin
-      result := state <> newState
+      if state <> newState then
+      begin
+        state := newState;
+        changed := true;
+      end;
     end;
 
-    /// установить новое состояние
-    procedure setNewState;
+    /// состояние изменилось? (возвращает и сбрасывает флаг)
+    function stateChanged: boolean;
     begin
-      state := newState
+      result := changed;
+      changed := false;
     end;
+
   end;
 
   /// Игровое поле -------------------------------------------------------------
@@ -189,35 +195,22 @@ type
       result := genNumber;
     end;
 
-    /// вычислить новое состояние
-    procedure calcNewState;
-    begin
-      for var i := 1 to N do
-        for var j := 1 to M do
-          cells[i, j].calcNewState;
-      // инкремент номера поколения
-      inc(genNumber);
-    end;
-
     /// состояние клетки изменилось?
     function cellStateChanged(i, j: integer): boolean;
     begin
       result := cells[i, j].stateChanged;
     end;
 
-    /// установить новое состояние для клетки
-    procedure setCellNewState(i, j: integer);
-    begin
-      cells[i, j].setNewState;
-    end;
-
     /// переход к следующему шагу
     procedure nextStep();
     begin
-      calcNewState;
       for var i := 1 to N do
         for var j := 1 to M do
-          setCellNewState(i, j);
+          cells[i, j].calcNewState;
+      inc(genNumber);
+      for var i := 1 to N do
+        for var j := 1 to M do
+          cells[i, j].applyNewState;
     end;
 
     /// очистить (все клетки пустые)
@@ -261,6 +254,7 @@ type
           end;
       end;
     end;
+
   end;
 
   /// Область просмотра поля ---------------------------------------------------
@@ -347,8 +341,8 @@ type
     /// нарисовать
     procedure draw;
     begin
-      LockDrawing;
       setWindowTitle;
+      LockDrawing;
       if (N * cellSize < height) or (M * cellSize < width) then
         clearWindow(bgColor);
       var y := y0;
@@ -366,35 +360,25 @@ type
       UnlockDrawing;
     end;
 
-    /// перерисовать не пустые клетки
-    procedure redrawNotEmpty;
+    /// нарисовать только изменившиеся клетки
+    procedure drawChanged;
     begin
-      LockDrawing;
       setWindowTitle;
+      LockDrawing;
+      // TODO: рисовать только клетки, попадающие в окно!
       for var i := 1 to N do
         for var j := 1 to M do
-          if data.getCellState(i, j) <> empty then
-            // TODO: рисовать только клетки, попадающие в окно!
+          // флаг изменений сбрасывается после чтения
+          if data.cellStateChanged(i, j) then
             drawCell(i, j);
       UnlockDrawing;
     end;
 
-    /// переход к следующему шагу и его отрисовка
-    procedure nextStepAndDraw;
+    /// один шаг (одно поколение)
+    procedure nextStep;
     begin
-      data.calcNewState;
-      setWindowTitle;
-      LockDrawing;
-      for var i := 1 to N do
-        for var j := 1 to M do
-          // если состояние клетки изменилось, то перерисовать её
-          if data.cellStateChanged(i, j) then
-          begin
-            data.setCellNewState(i, j);
-            // TODO: рисовать только клетки, попадающие в окно!
-            drawCell(i, j);
-          end;
-      UnlockDrawing;
+      data.nextStep;
+      drawChanged;
     end;
 
     /// очистить поле (все клетки пустые)
@@ -429,10 +413,10 @@ type
           begin // быстрый режим
             loop fastModeSteps do
               data.nextStep;
-            redrawNotEmpty;
+            drawChanged;
           end
           else // обычный режим
-            nextStepAndDraw;
+            nextStep;
           System.Windows.Forms.Application.DoEvents;
         until stop;
       end
@@ -511,7 +495,7 @@ type
       end;
       if stop then
         case k of
-          VK_Enter: nextStepAndDraw;
+          VK_Enter: nextStep;
           VK_Delete: clear;
           VK_Back: clearSignals;
           VK_Insert: loadPicture(wwFileName);
@@ -525,6 +509,7 @@ type
       height := window.Height;
       draw
     end;
+
   end;
 
 var
