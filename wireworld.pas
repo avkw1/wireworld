@@ -403,10 +403,10 @@ type
       end;
       if stopped then
         case k of
-          VK_Right: nextStepAndDraw;
+          VK_Enter: nextStepAndDraw;
           VK_Delete: clear;
           VK_Back: clearSignals;
-          VK_Home: loadPicture(wwFileName);
+          VK_Insert: loadPicture(wwFileName);
         end
     end;
 
