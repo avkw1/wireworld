@@ -185,6 +185,8 @@ type
     x0: integer;
     /// вертикальная координата
     y0: integer;
+    /// шаг перемещения при сдвиге (кол-во клеток)
+    moveStep: integer := 10;
     /// размер клетки
     cellSize: integer;
     /// номер поколения
@@ -232,7 +234,9 @@ type
     begin
       LockDrawing;
       setWindowTitle;
-      clearWindow(bgColor);
+      if (N * cellSize < window.Height) or
+         (M * cellSize < window.Width) then
+        clearWindow(bgColor);
       for var i := 1 to N do
         for var j := 1 to M do
           cells[i, j].draw(cellSize);
@@ -362,11 +366,24 @@ type
       window.Title := 'Клеточный автомат WireWorld [Поколение ' + nGen + ']';
     end;
 
+    /// установить исходный масштаб (размер клетки 1)
+    procedure scaleTo1;
+    begin
+      cellSize := 1;
+      x0 := 0;
+      y0 := 0;
+      resize;
+    end;
+
     /// увеличить масштаб
     procedure scaleUp;
     begin
       if cellSize < 64 then
-        cellSize *= 2;
+      begin
+        cellSize := cellSize shl 1;
+        x0 := x0 shl 1;
+        y0 := y0 shl 1;
+      end;
       resize;
     end;
 
@@ -374,7 +391,19 @@ type
     procedure scaleDown;
     begin
       if cellSize > 1 then
-        cellSize := cellSize div 2;
+      begin
+        cellSize := cellSize shr 1;
+        x0 := x0 shr 1;
+        y0 := y0 shr 1;
+      end;
+      resize;
+    end;
+
+    /// сдвиг изображения
+    procedure move(dx, dy: integer);
+    begin
+      x0 += dx;
+      y0 += dy;
       resize;
     end;
 
@@ -400,6 +429,11 @@ type
         VK_Space: play;
         VK_PageUp: scaleUp;
         VK_PageDown: scaleDown;
+        VK_Up: move(0, cellSize * moveStep);
+        VK_Down: move(0, -cellSize * moveStep);
+        VK_Left: move(cellSize * moveStep, 0);
+        VK_Right: move(-cellSize * moveStep, 0);
+        VK_Home: scaleTo1;
       end;
       if stopped then
         case k of
@@ -413,8 +447,6 @@ type
     /// обработчик изменения размера окна
     procedure resize;
     begin
-      x0 := (window.Width - M * cellSize) div 2;
-      y0 := (window.Height - N * cellSize) div 2;
       var y := y0;
       for var i := 1 to N do
       begin
