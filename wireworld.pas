@@ -310,24 +310,13 @@ type
     /// нарисовать клетку по координатам
     procedure drawCell(i, j, x, y: integer);
     begin
-      // TODO: оставить только FillRectangle?
-      if cellSize = 1 then
-        case data.getCellState(i, j) of
-          empty: SetPixel(x, y, emptyColor);
-          wire: SetPixel(x, y, wireColor);
-          signal: SetPixel(x, y, signalColor);
-          signal_tail: SetPixel(x, y, signalTailColor);
-        end
-      else
-      begin
-        case data.getCellState(i, j) of
-          empty: SetBrushColor(emptyColor);
-          wire: SetBrushColor(wireColor);
-          signal: SetBrushColor(signalColor);
-          signal_tail: SetBrushColor(signalTailColor);
-        end;
-        FillRectangle(x, y, x + cellSize, y + cellSize);
+      case data.getCellState(i, j) of
+        empty: SetBrushColor(emptyColor);
+        wire: SetBrushColor(wireColor);
+        signal: SetBrushColor(signalColor);
+        signal_tail: SetBrushColor(signalTailColor);
       end;
+      FillRectangle(x, y, x + cellSize, y + cellSize);
     end;
 
     /// нарисовать клетку, вычислив координаты
