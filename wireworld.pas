@@ -261,7 +261,7 @@ type
   FieldViewport = class
   public
     /// цвет фона (вокруг поля)
-    static bgColor: Color := clGray;
+    static bgColor: Color := clLightGray;
     /// цвет пустой клетки
     static emptyColor: Color := clBlack;
     /// цвет проводника
