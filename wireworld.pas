@@ -276,9 +276,9 @@ type
     name: string;
     /// данные (поле)
     data: Field;
-    /// горизонтальная координата
+    /// горизонтальная координата поля
     x0: integer;
-    /// вертикальная координата
+    /// вертикальная координата поля
     y0: integer;
     /// ширина
     width: integer;
@@ -326,12 +326,25 @@ type
       drawCell(i, j, x, y);
     end;
 
+    /// вернуть ширину поля в пикселях
+    function fieldWidth: integer;
+    begin
+      result := M * cellSize;
+    end;
+
+    /// вернуть высоту поля в пикселях
+    function fieldHeight: integer;
+    begin
+      result := N * cellSize;
+    end;
+
     /// нарисовать
     procedure draw;
     begin
       setWindowTitle;
       LockDrawing;
-      if (N * cellSize < height) or (M * cellSize < width) then
+      // если окно больше поля, то нарисовать фон
+      if (fieldHeight < height) or (fieldWidth < width) then
         clearWindow(bgColor);
       var y := y0;
       for var i := 1 to N do
@@ -412,13 +425,29 @@ type
         stop := true;
     end;
 
-    /// установить исходный масштаб (размер клетки 1)
+    /// исправить положение поля (x0, y0)
+    procedure fixPosition;
+    begin
+      if x0 < (width - fieldWidth) then
+        x0 := width - fieldWidth;
+      if x0 > 0 then
+        x0 := 0;
+      if y0 < (height - fieldHeight) then
+        y0 := height - fieldHeight;
+      if y0 > 0 then
+        y0 := 0;
+    end;
+
+    /// установить исходный масштаб (размер клетки 1) и положение (0, 0)
     procedure scaleTo1;
     begin
-      cellSize := 1;
-      x0 := 0;
-      y0 := 0;
-      draw
+      if (cellSize <> 1) or (x0 <> 0) or (y0 <> 0) then
+      begin
+        cellSize := 1;
+        x0 := 0;
+        y0 := 0;
+        draw;
+      end;
     end;
 
     /// увеличить масштаб
@@ -429,8 +458,8 @@ type
         cellSize := cellSize shl 1;
         x0 := x0 shl 1;
         y0 := y0 shl 1;
+        draw;
       end;
-      draw
     end;
 
     /// уменьшить масштаб
@@ -441,16 +470,21 @@ type
         cellSize := cellSize shr 1;
         x0 := x0 shr 1;
         y0 := y0 shr 1;
+        fixPosition;
+        draw;
       end;
-      draw
     end;
 
     /// сдвиг изображения
     procedure move(dx, dy: integer);
     begin
+      var xOld := x0;
+      var yOld := y0;
       x0 += dx;
       y0 += dy;
-      draw
+      fixPosition;
+      if (xOld <> x0) or (yOld <> y0) then
+        draw;
     end;
 
     /// обработчик мышки
@@ -495,6 +529,7 @@ type
     begin
       width := window.Width;
       height := window.Height;
+      fixPosition;
       draw
     end;
 
