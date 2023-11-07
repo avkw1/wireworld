@@ -346,13 +346,20 @@ type
       // если окно больше поля, то нарисовать фон
       if (fieldHeight < height) or (fieldWidth < width) then
         clearWindow(bgColor);
-      var y := y0;
-      for var i := 1 to N do
+      // расчёт индексов для рисования только клеток, попадающих в окно
+      var iBegin := floor((-y0) / cellSize) + 1;
+      var jBegin := floor((-x0) / cellSize) + 1;
+      var iEnd := min(ceil((height - y0) / cellSize), N);
+      var jEnd := min(ceil((width - x0) / cellSize), M);
+      var y := y0 + (iBegin - 1) * cellSize;
+      for var i := iBegin to iEnd do
       begin
-        var x := x0;
-        for var j := 1 to M do
+        var x := x0 + (jBegin - 1) * cellSize;
+        for var j := jBegin to jEnd do
         begin
-          // TODO: рисовать только клетки, попадающие в окно!
+          // сбросить флаг изменения
+          data.cellStateChanged(i, j);
+          // нарисовать клетку
           drawCell(i, j, x, y);
           x += cellSize;
         end;
@@ -366,11 +373,16 @@ type
     begin
       setWindowTitle;
       LockDrawing;
-      // TODO: рисовать только клетки, попадающие в окно!
-      for var i := 1 to N do
-        for var j := 1 to M do
-          // флаг изменений сбрасывается после чтения
+      // расчёт индексов для рисования только клеток, попадающих в окно
+      var iBegin := floor((-y0) / cellSize) + 1;
+      var jBegin := floor((-x0) / cellSize) + 1;
+      var iEnd := min(ceil((height - y0) / cellSize), N);
+      var jEnd := min(ceil((width - x0) / cellSize), M);
+      for var i := iBegin to iEnd do
+        for var j := jBegin to jEnd do
+          // флаг изменения сбрасывается после чтения
           if data.cellStateChanged(i, j) then
+            // нарисовать клетку, если она изменилась
             drawCell(i, j);
       UnlockDrawing;
     end;
