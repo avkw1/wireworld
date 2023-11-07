@@ -271,7 +271,6 @@ type
     /// цвет хвоста сигнала
     static signalTailColor: Color := RGB(0, 128, 255); // ff0080ff
 
-
   private
     /// название (для заголовка окна)
     name: string;
@@ -322,8 +321,8 @@ type
     /// нарисовать клетку, вычислив координаты
     procedure drawCell(i, j: integer);
     begin
-      var x := x0 + (j - 1) * CellSize;
-      var y := y0 + (i - 1) * CellSize;
+      var x := x0 + (j - 1) * cellSize;
+      var y := y0 + (i - 1) * cellSize;
       drawCell(i, j, x, y);
     end;
 
