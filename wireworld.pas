@@ -246,7 +246,7 @@ type
   end;
 
   /// Область просмотра поля ---------------------------------------------------
-  FieldViewport = class
+  Viewport = class
   public
     /// цвет фона (вокруг поля)
     static bgColor: Color := clLightGray;
@@ -564,7 +564,7 @@ type
 
 var
   // объект - область просмотра игрового поля
-  view: FieldViewport;
+  view: Viewport;
 
 // Обработчик мышки
 procedure mouseDown(x, y, mb: integer);
@@ -589,7 +589,7 @@ begin
   SetSmoothingOff;
   window.SetSize(M, N);
   window.CenterOnScreen;
-  view := new FieldViewport;
+  view := new Viewport;
   view.loadPicture(wwFileName);
   OnMouseDown := mouseDown;
   OnKeyDown := keyDown;
