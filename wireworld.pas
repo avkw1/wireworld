@@ -506,6 +506,8 @@ type
       begin
         var i := (y - y0) div CellSize + 1;
         var j := (x - x0) div CellSize + 1;
+        if (i > N) or (j > M) then
+          exit;
         case mb of
           1: data.incCellState(i, j);
           2: data.decCellState(i, j);
