@@ -177,6 +177,12 @@ type
       result := cells[i, j].getState;
     end;
 
+    /// установить состояние клетки
+    procedure setCellState(i, j: integer; cs: CellState);
+    begin
+      cells[i, j].setState(cs);
+    end;
+
     /// "инкремент" состояния клетки
     procedure incCellState(i, j: integer);
     begin
@@ -193,6 +199,12 @@ type
     function getGenNumber: cardinal;
     begin
       result := genNumber;
+    end;
+
+    /// обнулить номер поколения
+    procedure clearGenNumber;
+    begin
+      genNumber := 0;
     end;
 
     /// состояние клетки изменилось?
@@ -231,30 +243,6 @@ type
           cells[i, j].clearSignals;
     end;
 
-    /// загрузить изображение
-    procedure loadPicture(fname: string);
-    begin
-      var p: Picture := new Picture(fname);
-      if (p.Height = N) and (p.Width = M) then
-      begin
-        genNumber := 0;
-        for var i := 1 to N do
-          for var j := 1 to M do
-          begin
-            var cs: CellState;
-            var name := p.GetPixel(j - 1, i - 1).Name;
-            // TODO: сравнить с константами цветов
-            case name of
-              'ff000000': cs := empty;
-              'ffff8000': cs := wire;
-              'ffffffff': cs := signal;
-              'ff0080ff': cs := signal_tail;
-            end;
-            cells[i, j].setState(cs);
-          end;
-      end;
-    end;
-
   end;
 
   /// Область просмотра поля ---------------------------------------------------
@@ -263,11 +251,11 @@ type
     /// цвет фона (вокруг поля)
     static bgColor: Color := clLightGray;
     /// цвет пустой клетки
-    static emptyColor: Color := clBlack;
+    static emptyColor: Color := RGB(0, 0, 0); // ff000000
     /// цвет проводника
     static wireColor: Color := RGB(255, 128, 0);  // ffff8000
     /// цвет сигнала
-    static signalColor: Color := clWhite;
+    static signalColor: Color := RGB(255, 255, 255);  // ffffffff
     /// цвет хвоста сигнала
     static signalTailColor: Color := RGB(0, 128, 255); // ff0080ff
 
@@ -292,6 +280,29 @@ type
     stop: boolean := true;
 
   public
+    /// вернуть цвет для состояния клетки
+    static function cellStateToColor(cs: CellState): Color;
+    begin
+      case cs of
+        empty: result := emptyColor;
+        wire: result := wireColor;
+        signal: result := signalColor;
+        signal_tail: result := signalTailColor;
+      end;
+    end;
+
+    /// вернуть состояние клетки для цвета
+    static function colorToCellState(c: Color): CellState;
+    begin
+      result := empty;
+      if c = wireColor then
+        result := wire
+      else if c = signalColor then
+        result := signal
+      else if c = signalTailColor then
+        result := signal_tail;
+    end;
+
     constructor Create(name: string := 'Wireworld');
     begin
       self.name := name;
@@ -309,12 +320,7 @@ type
     /// нарисовать клетку по координатам
     procedure drawCell(i, j, x, y: integer);
     begin
-      case data.getCellState(i, j) of
-        empty: SetBrushColor(emptyColor);
-        wire: SetBrushColor(wireColor);
-        signal: SetBrushColor(signalColor);
-        signal_tail: SetBrushColor(signalTailColor);
-      end;
+      SetBrushColor(cellStateToColor(data.getCellState(i, j)));
       FillRectangle(x, y, x + cellSize, y + cellSize);
     end;
 
@@ -411,8 +417,15 @@ type
     /// загрузить изображение
     procedure loadPicture(fname: string);
     begin
-      data.loadPicture(fname);
-      draw
+      var p: Picture := new Picture(fname);
+      if (p.Height = N) and (p.Width = M) then
+      begin
+        data.clearGenNumber;
+        for var i := 1 to N do
+          for var j := 1 to M do
+            data.setCellState(i, j, colorToCellState(p.GetPixel(j - 1, i - 1)));
+        draw;
+      end;
     end;
 
     /// запуск игры
