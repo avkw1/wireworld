@@ -7,12 +7,6 @@ const
   N = 600;
   /// Количество столбцов поля
   M = 800;
-  /// Имя файла
-  wwFileName = 'ww800x600.gif';
-  /// Быстрый режим (эксперимент)
-  fastMode = false;
-  /// Количество шагов без перерисовки для быстрого режима
-  fastModeSteps = 100;
 
 type
   /// Состояние клетки (перечислимый тип)
@@ -278,10 +272,6 @@ type
     height: integer;
     /// размер клетки
     cellSize: integer := 1;
-    /// шаг перемещения при сдвиге (кол-во клеток)
-    moveStep: integer := 10;
-    /// флаг остановки
-    stop: boolean := true;
 
   public
     /// вернуть цвет для состояния клетки
@@ -398,10 +388,11 @@ type
     end;
 
     /// один шаг (одно поколение)
-    procedure nextGeneration;
+    procedure nextGeneration(draw: boolean := true);
     begin
       data.nextGeneration;
-      drawChanged;
+      if draw then
+        drawChanged;
     end;
 
     /// очистить поле (все клетки пустые)
@@ -432,28 +423,6 @@ type
       end;
     end;
 
-    /// запуск игры
-    procedure play;
-    begin
-      if stop then
-      begin
-        stop := false;
-        repeat
-          if fastMode then
-          begin // быстрый режим
-            loop fastModeSteps do
-              data.nextGeneration;
-            drawChanged;
-          end
-          else // обычный режим
-            nextGeneration;
-          System.Windows.Forms.Application.DoEvents;
-        until stop;
-      end
-      else
-        stop := true;
-    end;
-
     /// исправить положение поля (x0, y0)
     procedure fixPosition;
     begin
@@ -465,6 +434,12 @@ type
         y0 := height - fieldHeight;
       if y0 > 0 then
         y0 := 0;
+    end;
+
+    /// вернуть размер клетки (масштаб)
+    function getCellSize: integer;
+    begin
+      result := cellSize;
     end;
 
     /// установить исходный масштаб (размер клетки 1) и положение (0, 0)
@@ -528,40 +503,15 @@ type
     /// обработчик мышки
     procedure mouseDown(x, y, mb: integer);
     begin
-      if stop then
-      begin
-        var i := (y - y0) div CellSize + 1;
-        var j := (x - x0) div CellSize + 1;
-        if (i > N) or (j > M) then
-          exit;
-        case mb of
-          1: data.incCellState(i, j);
-          2: data.decCellState(i, j);
-        end;
-        drawCell(i, j);
+      var i := (y - y0) div CellSize + 1;
+      var j := (x - x0) div CellSize + 1;
+      if (i > N) or (j > M) then
+        exit;
+      case mb of
+        1: data.incCellState(i, j);
+        2: data.decCellState(i, j);
       end;
-    end;
-
-    /// обработчик клавиатуры
-    procedure keyDown(k: integer);
-    begin
-      case k of
-        VK_Space: play;
-        VK_PageUp: scaleUp;
-        VK_PageDown: scaleDown;
-        VK_Up: move(0, cellSize * moveStep);
-        VK_Down: move(0, -cellSize * moveStep);
-        VK_Left: move(cellSize * moveStep, 0);
-        VK_Right: move(-cellSize * moveStep, 0);
-        VK_Home: scaleTo1;
-      end;
-      if stop then
-        case k of
-          VK_Enter: nextGeneration;
-          VK_Delete: clear;
-          VK_Back: clearSignals;
-          VK_Insert: loadPicture(wwFileName);
-        end
+      drawCell(i, j);
     end;
 
     /// обработчик изменения размера окна
@@ -575,26 +525,108 @@ type
 
   end;
 
+  /// Управляющий класс --------------------------------------------------------
+  Control = class
+  private
+    /// область просмотра игрового поля
+    vp: Viewport;
+    /// шаг перемещения при сдвиге (кол-во клеток)
+    moveStep: integer := 10;
+    /// флаг остановки
+    stop: boolean := true;
+    /// имя файла с картинкой
+    wwFileName := 'ww800x600.gif';
+    /// быстрый режим (эксперимент)
+    fastMode: boolean := false;
+    /// количество шагов без перерисовки для быстрого режима
+    fastModeSteps: integer := 100;
+
+  public
+    constructor Create;
+    begin
+      vp := new Viewport;
+      vp.loadPicture(wwFileName);
+    end;
+
+    /// запуск игры
+    procedure play;
+    begin
+      if stop then
+      begin
+        stop := false;
+        repeat
+          if fastMode then
+          begin // быстрый режим
+            loop fastModeSteps - 1 do
+              vp.nextGeneration(false);
+            vp.nextGeneration;
+          end
+          else // обычный режим
+            vp.nextGeneration;
+          System.Windows.Forms.Application.DoEvents;
+        until stop;
+      end
+      else
+        stop := true;
+    end;
+
+    /// обработчик мышки
+    procedure mouseDown(x, y, mb: integer);
+    begin
+      if stop then
+        vp.mouseDown(x, y, mb);
+    end;
+
+    /// обработчик клавиатуры
+    procedure keyDown(k: integer);
+    begin
+      case k of
+        VK_Space: play;
+        VK_PageUp: vp.scaleUp;
+        VK_PageDown: vp.scaleDown;
+        VK_Up: vp.move(0, vp.getCellSize * moveStep);
+        VK_Down: vp.move(0, vp.getCellSize * -moveStep);
+        VK_Left: vp.move(vp.getCellSize * moveStep, 0);
+        VK_Right: vp.move(vp.getCellSize * -moveStep, 0);
+        VK_Home: vp.scaleTo1;
+      end;
+      if stop then
+        case k of
+          VK_Enter: vp.nextGeneration;
+          VK_Delete: vp.clear;
+          VK_Back: vp.clearSignals;
+          VK_Insert: vp.loadPicture(wwFileName);
+        end
+    end;
+
+    /// обработчик изменения размера окна
+    procedure resize;
+    begin
+      vp.resize;
+    end;
+
+  end;
+
 var
-  // объект - область просмотра игрового поля
-  view: Viewport;
+  // объект - управление игрой
+  ctrl: Control;
 
 // Обработчик мышки
 procedure mouseDown(x, y, mb: integer);
 begin
-  view.mouseDown(x, y, mb);
+  ctrl.mouseDown(x, y, mb);
 end;
 
 // Обработчик клавиатуры
 procedure keyDown(k: integer);
 begin
-  view.keyDown(k);
+  ctrl.keyDown(k);
 end;
 
 // Обработчик изменения размера окна
 procedure resize;
 begin
-  view.resize;
+  ctrl.resize;
 end;
 
 // Основная процедура
@@ -602,8 +634,7 @@ begin
   SetSmoothingOff;
   window.SetSize(M, N);
   window.CenterOnScreen;
-  view := new Viewport;
-  view.loadPicture(wwFileName);
+  ctrl := new Control;
   OnMouseDown := mouseDown;
   OnKeyDown := keyDown;
   OnResize := resize;
