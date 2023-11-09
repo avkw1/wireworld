@@ -466,12 +466,21 @@ type
     /// установить исходный масштаб (размер клетки 1) и положение (0, 0)
     procedure scaleTo1;
     begin
-      if (cellSize <> 1) or (x0 <> 0) or (y0 <> 0) then
+      var sizeChanged := (width <> M) or (height <> N);
+      if (cellSize <> 1) or (x0 <> 0) or (y0 <> 0) or sizeChanged then
       begin
         cellSize := 1;
         x0 := 0;
         y0 := 0;
-        draw;
+        // если размер окна изменён
+        if sizeChanged then
+        begin
+          // восстановить размер окна
+          window.Normalize;
+          window.SetSize(M, N); // будет вызван метод resize -> draw
+        end
+        else
+          draw;
       end;
     end;
 
