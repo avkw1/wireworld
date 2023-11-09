@@ -137,34 +137,45 @@ type
   Field = class
   private
     /// клетки поля
-    cells: array [1..N, 1..M] of Cell;
+    cells: array [,] of Cell;
     /// номер поколения
     genNumber: cardinal;
 
   public
+    /// количество строк
+    property nRows: integer read cells.GetLength(0);
+    /// количество столбцов
+    property nCols: integer read cells.GetLength(1);
+
     constructor Create;
     begin
+      cells := new Cell[0, 0];
+    end;
+
+    constructor Create(nRows, nCols: integer);
+    begin
+      cells := new Cell[nRows, nCols];
       // создание клеток
-      for var i := 1 to N do
-        for var j := 1 to M do
+      for var i := 0 to nRows - 1 do
+        for var j := 0 to nCols - 1 do
           cells[i, j] := new Cell;
       // связывание с соседями
-      for var i := 1 to N do
+      for var i := 0 to nRows - 1 do
       begin
         var i1 := i - 1;
-        if i1 = 0 then
-          i1 := N;
+        if i1 < 0 then
+          i1 := nRows - 1;
         var i2 := i + 1;
-        if i2 = N + 1 then
-          i2 := 1;
-        for var j := 1 to M do
+        if i2 = nRows then
+          i2 := 0;
+        for var j := 0 to nCols - 1 do
         begin
           var j1 := j - 1;
-          if j1 = 0 then
-            j1 := M;
+          if j1 < 0 then
+            j1 := nCols - 1;
           var j2 := j + 1;
-          if j2 = M + 1 then
-            j2 := 1;
+          if j2 = nCols then
+            j2 := 0;
           cells[i, j].setNeighbors(
             cells[i1, j], cells[i1, j2], cells[i, j2], cells[i2, j2],
             cells[i2, j], cells[i2, j1], cells[i, j1], cells[i1, j1]);
@@ -217,12 +228,12 @@ type
     /// переход к следующему поколению
     procedure nextGeneration;
     begin
-      for var i := 1 to N do
-        for var j := 1 to M do
+      for var i := 0 to nRows - 1 do
+        for var j := 0 to nCols - 1 do
           cells[i, j].calcNewState;
       inc(genNumber);
-      for var i := 1 to N do
-        for var j := 1 to M do
+      for var i := 0 to nRows - 1 do
+        for var j := 0 to nCols - 1 do
           cells[i, j].applyNewState;
     end;
 
@@ -230,8 +241,8 @@ type
     procedure clear;
     begin
       genNumber := 0;
-      for var i := 1 to N do
-        for var j := 1 to M do
+      for var i := 0 to nRows - 1 do
+        for var j := 0 to nCols - 1 do
           cells[i, j].setState(empty);
     end;
 
@@ -239,8 +250,8 @@ type
     procedure clearSignals;
     begin
       genNumber := 0;
-      for var i := 1 to N do
-        for var j := 1 to M do
+      for var i := 0 to nRows - 1 do
+        for var j := 0 to nCols - 1 do
           cells[i, j].clearSignals;
     end;
 
@@ -304,9 +315,9 @@ type
     constructor Create(name: string := 'Wireworld');
     begin
       self.name := name;
-      data := new Field;
       width := window.Width;
       height := window.Height;
+      data := new Field(height, width);
     end;
 
     /// установить заголовок окна
@@ -325,21 +336,21 @@ type
     /// нарисовать клетку, вычислив координаты
     procedure drawCell(i, j: integer);
     begin
-      var x := x0 + (j - 1) * cellSize;
-      var y := y0 + (i - 1) * cellSize;
+      var x := x0 + j * cellSize;
+      var y := y0 + i * cellSize;
       drawCell(i, j, x, y);
     end;
 
     /// вернуть ширину поля в пикселях
     function fieldWidth: integer;
     begin
-      result := M * cellSize;
+      result := data.nCols * cellSize;
     end;
 
     /// вернуть высоту поля в пикселях
     function fieldHeight: integer;
     begin
-      result := N * cellSize;
+      result := data.nRows * cellSize;
     end;
 
     /// нарисовать
@@ -351,14 +362,14 @@ type
       if (fieldHeight < height) or (fieldWidth < width) then
         clearWindow(bgColor);
       // расчёт индексов для рисования только клеток, попадающих в окно
-      var iBegin := floor((-y0) / cellSize) + 1;
-      var jBegin := floor((-x0) / cellSize) + 1;
-      var iEnd := min(ceil((height - y0) / cellSize), N);
-      var jEnd := min(ceil((width - x0) / cellSize), M);
-      var y := y0 + (iBegin - 1) * cellSize;
+      var iBegin := floor((-y0) / cellSize);
+      var jBegin := floor((-x0) / cellSize);
+      var iEnd := min(ceil((height - y0) / cellSize) - 1, data.nRows - 1);
+      var jEnd := min(ceil((width - x0) / cellSize) - 1, data.nCols - 1);
+      var y := y0 + iBegin * cellSize;
       for var i := iBegin to iEnd do
       begin
-        var x := x0 + (jBegin - 1) * cellSize;
+        var x := x0 + jBegin * cellSize;
         for var j := jBegin to jEnd do
         begin
           // сбросить флаг изменения
@@ -378,10 +389,10 @@ type
       setWindowTitle;
       LockDrawing;
       // расчёт индексов для рисования только клеток, попадающих в окно
-      var iBegin := floor((-y0) / cellSize) + 1;
-      var jBegin := floor((-x0) / cellSize) + 1;
-      var iEnd := min(ceil((height - y0) / cellSize), N);
-      var jEnd := min(ceil((width - x0) / cellSize), M);
+      var iBegin := floor((-y0) / cellSize);
+      var jBegin := floor((-x0) / cellSize);
+      var iEnd := min(ceil((height - y0) / cellSize) - 1, data.nRows - 1);
+      var jEnd := min(ceil((width - x0) / cellSize) - 1, data.nCols - 1);
       for var i := iBegin to iEnd do
         for var j := jBegin to jEnd do
           // флаг изменения сбрасывается после чтения
@@ -417,12 +428,12 @@ type
     procedure loadPicture(fname: string);
     begin
       var p: Picture := new Picture(fname);
-      if (p.Height = N) and (p.Width = M) then
+      if (p.Height = data.nRows) and (p.Width = data.nCols) then
       begin
         data.clearGenNumber;
-        for var i := 1 to N do
-          for var j := 1 to M do
-            data.setCellState(i, j, colorToCellState(p.GetPixel(j - 1, i - 1)));
+        for var i := 0 to data.nRows - 1 do
+          for var j := 0 to data.nCols - 1 do
+            data.setCellState(i, j, colorToCellState(p.GetPixel(j, i)));
         draw;
       end;
     end;
@@ -449,7 +460,7 @@ type
     /// установить исходный масштаб (размер клетки 1) и положение (0, 0)
     procedure scaleTo1;
     begin
-      var sizeChanged := (width <> M) or (height <> N);
+      var sizeChanged := (width <> data.nCols) or (height <> data.nRows);
       if (cellSize <> 1) or (x0 <> 0) or (y0 <> 0) or sizeChanged then
       begin
         cellSize := 1;
@@ -460,7 +471,7 @@ type
         begin
           // восстановить размер окна
           window.Normalize;
-          window.SetSize(M, N); // будет вызван метод resize -> draw
+          window.SetSize(data.nCols, data.nRows); // будет вызван resize -> draw
         end
         else
           draw;
@@ -507,9 +518,9 @@ type
     /// обработчик мышки
     procedure mouseDown(x, y, mb: integer);
     begin
-      var i := (y - y0) div CellSize + 1;
-      var j := (x - x0) div CellSize + 1;
-      if (i > N) or (j > M) then
+      var i := (y - y0) div CellSize;
+      var j := (x - x0) div CellSize;
+      if (i >= data.nRows) or (j >= data.nCols) then
         exit;
       case mb of
         1: data.incCellState(i, j);
