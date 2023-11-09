@@ -17,10 +17,14 @@ const
 type
   /// Состояние клетки (перечислимый тип)
   CellState = (
-    empty,      /// пустая клетка
-    wire,       /// проводник
-    signal,     /// сигнал
-    signal_tail /// "хвост" сигнала
+    /// пустая клетка
+    empty,
+    /// проводник
+    wire,
+    /// сигнал
+    signal,
+    /// "хвост" сигнала
+    signalTail
   );
 
   /// Клетка -------------------------------------------------------------------
@@ -68,8 +72,8 @@ type
       case state of
         empty: state := wire;
         wire: state := signal;
-        signal: state := signal_tail;
-        signal_tail: state := empty;
+        signal: state := signalTail;
+        signalTail: state := empty;
       end;
       newState := state;
     end;
@@ -78,10 +82,10 @@ type
     procedure decState;
     begin
       case state of
-        empty: state := signal_tail;
+        empty: state := signalTail;
         wire: state := empty;
         signal: state := wire;
-        signal_tail: state := signal;
+        signalTail: state := signal;
       end;
       newState := state;
     end;
@@ -89,7 +93,7 @@ type
     /// очистить сигналы
     procedure clearSignals;
     begin
-      if (state = signal) or (state = signal_tail) then
+      if (state = signal) or (state = signalTail) then
         setState(wire);
     end;
 
@@ -108,8 +112,8 @@ type
             if (count = 1) or (count = 2) then
               newState := signal;
           end;
-        signal: newState := signal_tail;
-        signal_tail: newState := wire;
+        signal: newState := signalTail;
+        signalTail: newState := wire;
       end;
     end;
 
@@ -287,7 +291,7 @@ type
         empty: result := emptyColor;
         wire: result := wireColor;
         signal: result := signalColor;
-        signal_tail: result := signalTailColor;
+        signalTail: result := signalTailColor;
       end;
     end;
 
@@ -300,7 +304,7 @@ type
       else if c = signalColor then
         result := signal
       else if c = signalTailColor then
-        result := signal_tail;
+        result := signalTail;
     end;
 
     constructor Create(name: string := 'Wireworld');
