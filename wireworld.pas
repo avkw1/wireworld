@@ -213,8 +213,8 @@ type
       result := cells[i, j].stateChanged;
     end;
 
-    /// переход к следующему шагу
-    procedure nextStep();
+    /// переход к следующему поколению
+    procedure nextGeneration;
     begin
       for var i := 1 to N do
         for var j := 1 to M do
@@ -394,9 +394,9 @@ type
     end;
 
     /// один шаг (одно поколение)
-    procedure nextStep;
+    procedure nextGeneration;
     begin
-      data.nextStep;
+      data.nextGeneration;
       drawChanged;
     end;
 
@@ -438,11 +438,11 @@ type
           if fastMode then
           begin // быстрый режим
             loop fastModeSteps do
-              data.nextStep;
+              data.nextGeneration;
             drawChanged;
           end
           else // обычный режим
-            nextStep;
+            nextGeneration;
           System.Windows.Forms.Application.DoEvents;
         until stop;
       end
@@ -553,7 +553,7 @@ type
       end;
       if stop then
         case k of
-          VK_Enter: nextStep;
+          VK_Enter: nextGeneration;
           VK_Delete: clear;
           VK_Back: clearSignals;
           VK_Insert: loadPicture(wwFileName);
