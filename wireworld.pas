@@ -139,13 +139,15 @@ type
     /// клетки поля
     cells: array [,] of Cell;
     /// номер поколения
-    genNumber: cardinal;
+    genN: cardinal;
 
   public
     /// количество строк
     property nRows: integer read cells.GetLength(0);
     /// количество столбцов
     property nCols: integer read cells.GetLength(1);
+    /// номер поколения
+    property genNumber: cardinal read genN;
 
     constructor Create;
     begin
@@ -207,16 +209,10 @@ type
       cells[i, j].decState;
     end;
 
-    /// вернуть номер поколения
-    function getGenNumber: cardinal;
-    begin
-      result := genNumber;
-    end;
-
     /// обнулить номер поколения
     procedure clearGenNumber;
     begin
-      genNumber := 0;
+      genN := 0;
     end;
 
     /// состояние клетки изменилось?
@@ -231,7 +227,7 @@ type
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
           cells[i, j].calcNewState;
-      inc(genNumber);
+      inc(genN);
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
           cells[i, j].applyNewState;
@@ -240,7 +236,7 @@ type
     /// очистить (все клетки пустые)
     procedure clear;
     begin
-      genNumber := 0;
+      genN := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
           cells[i, j].setState(empty);
@@ -249,7 +245,7 @@ type
     /// очистить сигналы
     procedure clearSignals;
     begin
-      genNumber := 0;
+      genN := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
           cells[i, j].clearSignals;
@@ -289,6 +285,11 @@ type
     cellSize: integer := 1;
 
   public
+    /// ширина поля в пикселях
+    property fieldWidth: integer read data.nCols * cellSize;
+    /// высота поля в пикселях
+    property fieldHeight: integer read data.nRows * cellSize;
+
     /// вернуть цвет для состояния клетки
     static function cellStateToColor(cs: CellState): Color;
     begin
@@ -323,7 +324,7 @@ type
     /// установить заголовок окна
     procedure setWindowTitle;
     begin
-      window.Title := name + ' [Поколение ' + data.getGenNumber + ']';
+      window.Title := name + ' [Поколение ' + data.genNumber + ']';
     end;
 
     /// нарисовать клетку по координатам
@@ -339,18 +340,6 @@ type
       var x := x0 + j * cellSize;
       var y := y0 + i * cellSize;
       drawCell(i, j, x, y);
-    end;
-
-    /// вернуть ширину поля в пикселях
-    function fieldWidth: integer;
-    begin
-      result := data.nCols * cellSize;
-    end;
-
-    /// вернуть высоту поля в пикселях
-    function fieldHeight: integer;
-    begin
-      result := data.nRows * cellSize;
     end;
 
     /// нарисовать
