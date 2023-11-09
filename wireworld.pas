@@ -487,7 +487,7 @@ type
     /// увеличить масштаб
     procedure scaleUp;
     begin
-      if cellSize < 64 then
+      if cellSize < 32 then
       begin
         cellSize := cellSize shl 1;
         x0 := x0 shl 1;
