@@ -127,7 +127,7 @@ type
     /// клетки поля
     cells: array [,] of Cell;
     /// номер поколения
-    genN: cardinal;
+    genNumber_: cardinal;
   
   public
     /// количество строк
@@ -135,7 +135,7 @@ type
     /// количество столбцов
     property nCols: integer read cells.GetLength(1);
     /// номер поколения
-    property genNumber: cardinal read genN;
+    property genNumber: cardinal read genNumber_;
     
     constructor Create;
     begin
@@ -200,7 +200,7 @@ type
     /// обнулить номер поколения
     procedure clearGenNumber;
     begin
-      genN := 0;
+      genNumber_ := 0;
     end;
     
     /// состояние клетки изменилось?
@@ -215,7 +215,7 @@ type
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
           cells[i, j].calcNewState;
-      inc(genN);
+      inc(genNumber_);
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
           cells[i, j].applyNewState;
@@ -224,7 +224,7 @@ type
     /// очистить (все клетки пустые)
     procedure clear;
     begin
-      genN := 0;
+      genNumber_ := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
           cells[i, j].state := empty;
@@ -233,7 +233,7 @@ type
     /// очистить сигналы
     procedure clearSignals;
     begin
-      genN := 0;
+      genNumber_ := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
           cells[i, j].clearSignals;
