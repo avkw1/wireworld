@@ -19,7 +19,7 @@ type
   Cell = class
   private
     /// состояние
-    state: CellState;
+    state_: CellState;
     /// новое состояние
     newState: CellState;
     /// флаг изменения состояния
@@ -27,20 +27,18 @@ type
     /// соседи
     neighbors: array [1..8] of Cell;
   
-  public
-    /// вернуть состояние
-    function getState: CellState;
-    begin
-      result := state
-    end;
-    
+  private
     /// установить состояние
     procedure setState(cs: CellState);
     begin
-      state := cs;
+      state_ := cs;
       newState := cs;
     end;
-    
+
+  public
+    /// состояние
+    property state: CellState read state_ write setState;
+
     /// связать с соседями
     procedure setNeighbors(n1, n2, n3, n4, n5, n6, n7, n8: Cell);
     begin
@@ -57,45 +55,43 @@ type
     /// "инкремент" состояния
     procedure incState;
     begin
-      case state of
-        empty: state := wire;
-        wire: state := signal;
-        signal: state := signalTail;
-        signalTail: state := empty;
+      case state_ of
+        empty: setState(wire);
+        wire: setState(signal);
+        signal: setState(signalTail);
+        signalTail: setState(empty);
       end;
-      newState := state;
     end;
     
     /// "декремент" состояния
     procedure decState;
     begin
-      case state of
-        empty: state := signalTail;
-        wire: state := empty;
-        signal: state := wire;
-        signalTail: state := signal;
+      case state_ of
+        empty: setState(signalTail);
+        wire: setState(empty);
+        signal: setState(wire);
+        signalTail: setState(signal);
       end;
-      newState := state;
     end;
     
     /// очистить сигналы
     procedure clearSignals;
     begin
-      if (state = signal) or (state = signalTail) then
+      if (state_ = signal) or (state_ = signalTail) then
         setState(wire);
     end;
     
     /// вычислить новое состояние
     procedure calcNewState;
     begin
-      if state = empty then
+      if state_ = empty then
         exit;
-      case state of
+      case state_ of
         wire:
           begin
             var count := 0;
             for var i := 1 to high(neighbors) do
-              if neighbors[i].state = signal then
+              if neighbors[i].state_ = signal then
                 inc(count);
             if (count = 1) or (count = 2) then
               newState := signal;
@@ -108,9 +104,9 @@ type
     /// применить новое состояние
     procedure applyNewState;
     begin
-      if state <> newState then
+      if state_ <> newState then
       begin
-        state := newState;
+        state_ := newState;
         changed := true;
       end;
     end;
@@ -180,13 +176,13 @@ type
     /// вернуть состояние клетки
     function getCellState(i, j: integer): CellState;
     begin
-      result := cells[i, j].getState;
+      result := cells[i, j].state;
     end;
     
     /// установить состояние клетки
     procedure setCellState(i, j: integer; cs: CellState);
     begin
-      cells[i, j].setState(cs);
+      cells[i, j].state := cs;
     end;
     
     /// "инкремент" состояния клетки
@@ -231,7 +227,7 @@ type
       genN := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
-          cells[i, j].setState(empty);
+          cells[i, j].state := empty;
     end;
     
     /// очистить сигналы
