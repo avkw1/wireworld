@@ -38,13 +38,15 @@ type
     /// высота
     height: integer;
     /// размер клетки
-    cellSize: integer := 1;
+    cellSize_: integer := 1;
 
   public
+    /// размер клетки
+    property cellSize: integer read cellSize_;
     /// ширина поля в пикселях
-    property fieldWidth: integer read data.nCols * cellSize;
+    property fieldWidth: integer read data.nCols * cellSize_;
     /// высота поля в пикселях
-    property fieldHeight: integer read data.nRows * cellSize;
+    property fieldHeight: integer read data.nRows * cellSize_;
 
     /// вернуть цвет для состояния клетки
     static function cellStateToColor(cs: CellState): Color;
@@ -87,14 +89,14 @@ type
     procedure drawCell(i, j, x, y: integer);
     begin
       SetBrushColor(cellStateToColor(data.getCellState(i, j)));
-      FillRectangle(x, y, x + cellSize, y + cellSize);
+      FillRectangle(x, y, x + cellSize_, y + cellSize_);
     end;
 
     /// нарисовать клетку, вычислив координаты
     procedure drawCell(i, j: integer);
     begin
-      var x := x0 + j * cellSize;
-      var y := y0 + i * cellSize;
+      var x := x0 + j * cellSize_;
+      var y := y0 + i * cellSize_;
       drawCell(i, j, x, y);
     end;
 
@@ -107,23 +109,23 @@ type
       if (fieldHeight < height) or (fieldWidth < width) then
         clearWindow(bgColor);
       // расчёт индексов для рисования только клеток, попадающих в окно
-      var iBegin := floor((-y0) / cellSize);
-      var jBegin := floor((-x0) / cellSize);
-      var iEnd := min(ceil((height - y0) / cellSize) - 1, data.nRows - 1);
-      var jEnd := min(ceil((width - x0) / cellSize) - 1, data.nCols - 1);
-      var y := y0 + iBegin * cellSize;
+      var iBegin := floor((-y0) / cellSize_);
+      var jBegin := floor((-x0) / cellSize_);
+      var iEnd := min(ceil((height - y0) / cellSize_) - 1, data.nRows - 1);
+      var jEnd := min(ceil((width - x0) / cellSize_) - 1, data.nCols - 1);
+      var y := y0 + iBegin * cellSize_;
       for var i := iBegin to iEnd do
       begin
-        var x := x0 + jBegin * cellSize;
+        var x := x0 + jBegin * cellSize_;
         for var j := jBegin to jEnd do
         begin
           // сбросить флаг изменения
           data.cellStateChanged(i, j);
           // нарисовать клетку
           drawCell(i, j, x, y);
-          x += cellSize;
+          x += cellSize_;
         end;
-        y += cellSize;
+        y += cellSize_;
       end;
       UnlockDrawing;
     end;
@@ -134,10 +136,10 @@ type
       setWindowTitle;
       LockDrawing;
       // расчёт индексов для рисования только клеток, попадающих в окно
-      var iBegin := floor((-y0) / cellSize);
-      var jBegin := floor((-x0) / cellSize);
-      var iEnd := min(ceil((height - y0) / cellSize) - 1, data.nRows - 1);
-      var jEnd := min(ceil((width - x0) / cellSize) - 1, data.nCols - 1);
+      var iBegin := floor((-y0) / cellSize_);
+      var jBegin := floor((-x0) / cellSize_);
+      var iEnd := min(ceil((height - y0) / cellSize_) - 1, data.nRows - 1);
+      var jEnd := min(ceil((width - x0) / cellSize_) - 1, data.nCols - 1);
       for var i := iBegin to iEnd do
         for var j := jBegin to jEnd do
           // флаг изменения сбрасывается после чтения
@@ -196,19 +198,13 @@ type
         y0 := 0;
     end;
 
-    /// вернуть размер клетки (масштаб)
-    function getCellSize: integer;
-    begin
-      result := cellSize;
-    end;
-
     /// установить исходный масштаб (размер клетки 1) и положение (0, 0)
     procedure scaleTo1;
     begin
       var sizeChanged := (width <> data.nCols) or (height <> data.nRows);
-      if (cellSize <> 1) or (x0 <> 0) or (y0 <> 0) or sizeChanged then
+      if (cellSize_ <> 1) or (x0 <> 0) or (y0 <> 0) or sizeChanged then
       begin
-        cellSize := 1;
+        cellSize_ := 1;
         x0 := 0;
         y0 := 0;
         // если размер окна изменён
@@ -226,9 +222,9 @@ type
     /// увеличить масштаб
     procedure scaleUp;
     begin
-      if cellSize < 32 then
+      if cellSize_ < 32 then
       begin
-        cellSize := cellSize shl 1;
+        cellSize_ := cellSize_ shl 1;
         x0 := x0 shl 1;
         y0 := y0 shl 1;
         draw;
@@ -238,9 +234,9 @@ type
     /// уменьшить масштаб
     procedure scaleDown;
     begin
-      if cellSize > 1 then
+      if cellSize_ > 1 then
       begin
-        cellSize := cellSize shr 1;
+        cellSize_ := cellSize_ shr 1;
         x0 := x0 shr 1;
         y0 := y0 shr 1;
         fixPosition;
@@ -263,8 +259,8 @@ type
     /// обработчик мышки
     procedure mouseDown(x, y, mb: integer);
     begin
-      var i := (y - y0) div CellSize;
-      var j := (x - x0) div CellSize;
+      var i := (y - y0) div cellSize_;
+      var j := (x - x0) div cellSize_;
       if (i >= data.nRows) or (j >= data.nCols) then
         exit;
       case mb of
@@ -345,10 +341,10 @@ type
         VK_Space: play;
         VK_PageUp: vp.scaleUp;
         VK_PageDown: vp.scaleDown;
-        VK_Up: vp.move(0, vp.getCellSize * moveStep);
-        VK_Down: vp.move(0, vp.getCellSize * -moveStep);
-        VK_Left: vp.move(vp.getCellSize * moveStep, 0);
-        VK_Right: vp.move(vp.getCellSize * -moveStep, 0);
+        VK_Up: vp.move(0, vp.cellSize * moveStep);
+        VK_Down: vp.move(0, vp.cellSize * -moveStep);
+        VK_Left: vp.move(vp.cellSize * moveStep, 0);
+        VK_Right: vp.move(vp.cellSize * -moveStep, 0);
         VK_Home: vp.scaleTo1;
       end;
       if stop then
