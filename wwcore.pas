@@ -84,15 +84,17 @@ type
     /// вычислить новое состояние
     procedure calcNewState;
     begin
-      if state_ = empty then
-        exit;
       case state_ of
         wire:
           begin
             var count := 0;
             for var i := 1 to high(neighbors) do
-              if neighbors[i].state_ = signal then
-                inc(count);
+            begin
+              var n := neighbors[i];
+              if n <> nil then
+                if n.state_ = signal then
+                  inc(count);
+            end;
             if (count = 1) or (count = 2) then
               newState := signal;
           end;
@@ -128,6 +130,8 @@ type
     cells: array [,] of Cell;
     /// номер поколения
     genNumber_: cardinal;
+    /// флаг установки соседей
+    neighborsSet: boolean;
 
   public
     /// количество строк
@@ -145,56 +149,56 @@ type
     constructor Create(nRows, nCols: integer);
     begin
       cells := new Cell[nRows, nCols];
-      // создание клеток
-      for var i := 0 to nRows - 1 do
-        for var j := 0 to nCols - 1 do
-          cells[i, j] := new Cell;
-      // связывание с соседями
-      for var i := 0 to nRows - 1 do
-      begin
-        var i1 := i - 1;
-        if i1 < 0 then
-          i1 := nRows - 1;
-        var i2 := i + 1;
-        if i2 = nRows then
-          i2 := 0;
-        for var j := 0 to nCols - 1 do
-        begin
-          var j1 := j - 1;
-          if j1 < 0 then
-            j1 := nCols - 1;
-          var j2 := j + 1;
-          if j2 = nCols then
-            j2 := 0;
-          cells[i, j].setNeighbors(
-            cells[i1, j], cells[i1, j2], cells[i, j2], cells[i2, j2],
-            cells[i2, j], cells[i2, j1], cells[i, j1], cells[i1, j1]);
-        end;
-      end;
     end;
 
     /// вернуть состояние клетки
     function getCellState(i, j: integer): CellState;
     begin
-      result := cells[i, j].state;
+      var c := cells[i, j];
+      if c <> nil then
+        result := c.state
+      else
+        result := empty;
     end;
 
     /// установить состояние клетки
     procedure setCellState(i, j: integer; cs: CellState);
     begin
-      cells[i, j].state := cs;
+      neighborsSet := false;
+      if cs = empty then
+        cells[i, j] := nil
+      else
+      begin
+        var c := cells[i, j];
+        if c = nil then
+        begin
+          c := new Cell;
+          cells[i, j] := c;
+        end;
+        c.state := cs;
+      end;
     end;
 
     /// "инкремент" состояния клетки
     procedure incCellState(i, j: integer);
     begin
+      neighborsSet := false;
+      if cells[i, j] = nil then
+        cells[i, j] := new Cell;
       cells[i, j].incState;
+      if cells[i, j].state = empty then
+        cells[i, j] := nil;
     end;
 
     /// "декремент" состояния клетки
     procedure decCellState(i, j: integer);
     begin
+      neighborsSet := false;
+      if cells[i, j] = nil then
+        cells[i, j] := new Cell;
       cells[i, j].decState;
+      if cells[i, j].state = empty then
+        cells[i, j] := nil;
     end;
 
     /// обнулить номер поколения
@@ -206,19 +210,66 @@ type
     /// состояние клетки изменилось?
     function cellStateChanged(i, j: integer): boolean;
     begin
-      result := cells[i, j].stateChanged;
+      var c := cells[i, j];
+      if c <> nil then
+        result := c.stateChanged
+      else
+        result := false;
+    end;
+
+    /// связать с соседями
+    procedure setNeighbors;
+    begin
+      for var i := 0 to nRows - 1 do
+      begin
+        var i1 := i - 1;
+        if i1 < 0 then
+          i1 := nRows - 1;
+        var i2 := i + 1;
+        if i2 = nRows then
+          i2 := 0;
+        for var j := 0 to nCols - 1 do
+        begin
+          var c := cells[i, j];
+          if c <> nil then
+          begin
+            var j1 := j - 1;
+            if j1 < 0 then
+              j1 := nCols - 1;
+            var j2 := j + 1;
+            if j2 = nCols then
+              j2 := 0;
+            c.setNeighbors(
+              cells[i1, j], cells[i1, j2], cells[i, j2], cells[i2, j2],
+              cells[i2, j], cells[i2, j1], cells[i, j1], cells[i1, j1]);
+          end;
+        end;
+      end;
     end;
 
     /// переход к следующему поколению
     procedure nextGeneration;
     begin
+      if not neighborsSet then
+      begin
+        setNeighbors;
+        neighborsSet := true;
+      end;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
-          cells[i, j].calcNewState;
+        begin
+          var c := cells[i, j];
+          if c <> nil then
+            c.calcNewState;
+        end;
       inc(genNumber_);
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
-          cells[i, j].applyNewState;
+        begin
+          var c := cells[i, j];
+          if c <> nil then
+            c.applyNewState;
+        end;
     end;
 
     /// очистить (все клетки пустые)
@@ -227,7 +278,7 @@ type
       genNumber_ := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
-          cells[i, j].state := empty;
+          cells[i, j] := nil;
     end;
 
     /// очистить сигналы
@@ -236,7 +287,11 @@ type
       genNumber_ := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
-          cells[i, j].clearSignals;
+        begin
+          var c := cells[i, j];
+          if c <> nil then
+            c.clearSignals;
+        end;
     end;
 
   end;
