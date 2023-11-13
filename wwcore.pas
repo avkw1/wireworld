@@ -13,7 +13,7 @@ type
     /// "хвост" сигнала
     signalTail
   );
-  
+
   //////////////////////////////////////////////////////////////////////////////
   /// Клетка
   Cell = class
@@ -26,7 +26,7 @@ type
     changed: boolean;
     /// соседи
     neighbors: array [1..8] of Cell;
-  
+
   private
     /// установить состояние
     procedure setState(cs: CellState);
@@ -51,7 +51,7 @@ type
       neighbors[7] := n7;
       neighbors[8] := n8;
     end;
-    
+
     /// "инкремент" состояния
     procedure incState;
     begin
@@ -62,7 +62,7 @@ type
         signalTail: setState(empty);
       end;
     end;
-    
+
     /// "декремент" состояния
     procedure decState;
     begin
@@ -73,14 +73,14 @@ type
         signalTail: setState(signal);
       end;
     end;
-    
+
     /// очистить сигналы
     procedure clearSignals;
     begin
       if (state_ = signal) or (state_ = signalTail) then
         setState(wire);
     end;
-    
+
     /// вычислить новое состояние
     procedure calcNewState;
     begin
@@ -100,7 +100,7 @@ type
         signalTail: newState := wire;
       end;
     end;
-    
+
     /// применить новое состояние
     procedure applyNewState;
     begin
@@ -110,16 +110,16 @@ type
         changed := true;
       end;
     end;
-    
+
     /// состояние изменилось? (возвращает и сбрасывает флаг)
     function stateChanged: boolean;
     begin
       result := changed;
       changed := false;
     end;
-  
+
   end;
-  
+
   //////////////////////////////////////////////////////////////////////////////
   /// Игровое поле
   Field = class
@@ -128,7 +128,7 @@ type
     cells: array [,] of Cell;
     /// номер поколения
     genNumber_: cardinal;
-  
+
   public
     /// количество строк
     property nRows: integer read cells.GetLength(0);
@@ -136,12 +136,12 @@ type
     property nCols: integer read cells.GetLength(1);
     /// номер поколения
     property genNumber: cardinal read genNumber_;
-    
+
     constructor Create;
     begin
       cells := new Cell[0, 0];
     end;
-    
+
     constructor Create(nRows, nCols: integer);
     begin
       cells := new Cell[nRows, nCols];
@@ -172,43 +172,43 @@ type
         end;
       end;
     end;
-    
+
     /// вернуть состояние клетки
     function getCellState(i, j: integer): CellState;
     begin
       result := cells[i, j].state;
     end;
-    
+
     /// установить состояние клетки
     procedure setCellState(i, j: integer; cs: CellState);
     begin
       cells[i, j].state := cs;
     end;
-    
+
     /// "инкремент" состояния клетки
     procedure incCellState(i, j: integer);
     begin
       cells[i, j].incState;
     end;
-    
+
     /// "декремент" состояния клетки
     procedure decCellState(i, j: integer);
     begin
       cells[i, j].decState;
     end;
-    
+
     /// обнулить номер поколения
     procedure clearGenNumber;
     begin
       genNumber_ := 0;
     end;
-    
+
     /// состояние клетки изменилось?
     function cellStateChanged(i, j: integer): boolean;
     begin
       result := cells[i, j].stateChanged;
     end;
-    
+
     /// переход к следующему поколению
     procedure nextGeneration;
     begin
@@ -220,7 +220,7 @@ type
         for var j := 0 to nCols - 1 do
           cells[i, j].applyNewState;
     end;
-    
+
     /// очистить (все клетки пустые)
     procedure clear;
     begin
@@ -229,7 +229,7 @@ type
         for var j := 0 to nCols - 1 do
           cells[i, j].state := empty;
     end;
-    
+
     /// очистить сигналы
     procedure clearSignals;
     begin
@@ -238,7 +238,7 @@ type
         for var j := 0 to nCols - 1 do
           cells[i, j].clearSignals;
     end;
-  
+
   end;
 
 end.
