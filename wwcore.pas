@@ -25,7 +25,7 @@ type
     /// флаг изменения состояния
     changed: boolean;
     /// соседи
-    neighbors: array [1..8] of Cell;
+    neighbors: array of Cell;
 
   private
     /// установить состояние
@@ -42,14 +42,17 @@ type
     /// связать с соседями
     procedure setNeighbors(n1, n2, n3, n4, n5, n6, n7, n8: Cell);
     begin
-      neighbors[1] := n1;
-      neighbors[2] := n2;
-      neighbors[3] := n3;
-      neighbors[4] := n4;
-      neighbors[5] := n5;
-      neighbors[6] := n6;
-      neighbors[7] := n7;
-      neighbors[8] := n8;
+      neighbors := new Cell[8];
+      var i := 0;
+      if n1 <> nil then begin neighbors[i] := n1; inc(i) end;
+      if n2 <> nil then begin neighbors[i] := n2; inc(i) end;
+      if n3 <> nil then begin neighbors[i] := n3; inc(i) end;
+      if n4 <> nil then begin neighbors[i] := n4; inc(i) end;
+      if n5 <> nil then begin neighbors[i] := n5; inc(i) end;
+      if n6 <> nil then begin neighbors[i] := n6; inc(i) end;
+      if n7 <> nil then begin neighbors[i] := n7; inc(i) end;
+      if n8 <> nil then begin neighbors[i] := n8; inc(i) end;
+      SetLength(neighbors, i);
     end;
 
     /// "инкремент" состояния
@@ -88,15 +91,12 @@ type
         wire:
           begin
             var count := 0;
-            for var i := 1 to high(neighbors) do
-            begin
-              var n := neighbors[i];
-              if n <> nil then
-                if n.state_ = signal then
-                  inc(count);
-            end;
-            if (count = 1) or (count = 2) then
-              newState := signal;
+            for var i := 0 to neighbors.GetUpperBound(0) do
+              if neighbors[i].state_ = signal then
+                inc(count);
+            if count < 1 then exit;
+            if count > 2 then exit;
+            newState := signal;
           end;
         signal: newState := signalTail;
         signalTail: newState := wire;
