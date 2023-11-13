@@ -327,6 +327,29 @@ type
         stop := true;
     end;
 
+    /// выполнить тесты производительности
+    procedure performanceTests;
+    begin
+      // тест 1 (без рисования)
+      vp.scaleTo1;
+      vp.loadPicture(wwFileName);
+      window.Title := window.Title + ' (Запущен тест 1, ждите!)';
+      Milliseconds;
+      loop 1000 do
+        vp.nextGeneration(false);
+      var t1 := MillisecondsDelta;
+      // тест 2 (с рисованием)
+      vp.loadPicture(wwFileName);
+      Milliseconds;
+      loop 1000 do
+        vp.nextGeneration;
+      var t2 := MillisecondsDelta;
+      System.Windows.Forms.MessageBox.Show(
+        'Тест 1 (1000 поколений без рисования) : ' + t1 / 1000 + ' с' + #10 +
+        'Тест 2 (1000 поколений с рисованием)  : ' + t2 / 1000 + ' с',
+        'Результаты тестов производительности');
+    end;
+
     /// обработчик мышки
     procedure mouseDown(x, y, mb: integer);
     begin
@@ -353,6 +376,7 @@ type
           VK_Delete: vp.clear;
           VK_Back: vp.clearSignals;
           VK_Insert: vp.loadPicture(wwFileName);
+          VK_F2: performanceTests;
         end
     end;
 
