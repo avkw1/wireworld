@@ -291,6 +291,8 @@ type
     moveStep: integer := 10;
     /// флаг остановки
     stop: boolean := true;
+    /// флаг запуска тестов
+    test: boolean;
     /// имя файла с картинкой
     wwFileName := 'ww800x600.gif';
     /// быстрый режим (эксперимент)
@@ -330,29 +332,43 @@ type
     /// выполнить тесты производительности
     procedure performanceTests;
     begin
+      test := true;
       // тест 1 (без рисования)
       vp.scaleTo1;
       vp.loadPicture(wwFileName);
-      window.Title := window.Title + ' (Запущен тест 1, ждите!)';
+      window.Title := 'Тест 1 запущен...';
       Milliseconds;
       loop 1000 do
         vp.nextGeneration(false);
       var t1 := MillisecondsDelta;
       // тест 2 (с рисованием)
+      System.Windows.Forms.Application.DoEvents;
+      var n := vp.name;
+      vp.name := 'Тест 2 запущен...';
       vp.loadPicture(wwFileName);
       Milliseconds;
       loop 1000 do
+      begin
         vp.nextGeneration;
+        System.Windows.Forms.Application.DoEvents;
+      end;
       var t2 := MillisecondsDelta;
       System.Windows.Forms.MessageBox.Show(
         'Тест 1 (1000 поколений без рисования) : ' + t1 / 1000 + ' с' + #10 +
-        'Тест 2 (1000 поколений с рисованием)  : ' + t2 / 1000 + ' с',
+        'Тест 2 (1000 поколений с рисованием)  : ' + t2 / 1000 + ' с' + #10 +
+        'Скорость без рисования : ' + 60000000 div t1 + ' поколений в минуту' + #10 +
+        'Скорость с рисованием  : ' + 60000000 div t2 + ' поколений в минуту',
         'Результаты тестов производительности');
+      vp.name := n;
+      vp.setWindowTitle;
+      test := false;
     end;
 
     /// обработчик мышки
     procedure mouseDown(x, y, mb: integer);
     begin
+      if test then
+        exit;
       if stop then
         vp.mouseDown(x, y, mb);
     end;
@@ -360,6 +376,8 @@ type
     /// обработчик клавиатуры
     procedure keyDown(k: integer);
     begin
+      if test then
+        exit;
       case k of
         VK_Space: play;
         VK_PageUp: vp.scaleUp;
