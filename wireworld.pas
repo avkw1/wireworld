@@ -109,8 +109,8 @@ type
       if (fieldHeight < height) or (fieldWidth < width) then
         clearWindow(bgColor);
       // расчёт индексов для рисования только клеток, попадающих в окно
-      var iBegin := floor((-y0) / cellSize_);
-      var jBegin := floor((-x0) / cellSize_);
+      var iBegin := max(0, floor((-y0) / cellSize_));
+      var jBegin := max(0, floor((-x0) / cellSize_));
       var iEnd := min(ceil((height - y0) / cellSize_) - 1, data.nRows - 1);
       var jEnd := min(ceil((width - x0) / cellSize_) - 1, data.nCols - 1);
       var y := y0 + iBegin * cellSize_;
@@ -136,8 +136,8 @@ type
       setWindowTitle;
       LockDrawing;
       // расчёт индексов для рисования только клеток, попадающих в окно
-      var iBegin := floor((-y0) / cellSize_);
-      var jBegin := floor((-x0) / cellSize_);
+      var iBegin := max(0, floor((-y0) / cellSize_));
+      var jBegin := max(0, floor((-x0) / cellSize_));
       var iEnd := min(ceil((height - y0) / cellSize_) - 1, data.nRows - 1);
       var jEnd := min(ceil((width - x0) / cellSize_) - 1, data.nCols - 1);
       for var i := iBegin to iEnd do
@@ -188,13 +188,19 @@ type
     /// исправить положение поля (x0, y0)
     procedure fixPosition;
     begin
-      if x0 < (width - fieldWidth) then
-        x0 := width - fieldWidth;
-      if x0 > 0 then
+      var dx := width - fieldWidth;
+      var dy := height - fieldHeight;
+      if dx >= 0 then
+        x0 := dx div 2
+      else if x0 < dx then
+        x0 := dx
+      else if x0 > 0 then
         x0 := 0;
-      if y0 < (height - fieldHeight) then
-        y0 := height - fieldHeight;
-      if y0 > 0 then
+      if dy >= 0 then
+        y0 := dy div 2
+      else if y0 < dy then
+        y0 := dy
+      else if y0 > 0 then
         y0 := 0;
     end;
 
@@ -220,25 +226,26 @@ type
     end;
 
     /// увеличить масштаб
-    procedure scaleUp;
+    procedure scaleUp(x, y: integer);
     begin
       if cellSize_ < 32 then
       begin
-        cellSize_ := cellSize_ shl 1;
-        x0 := x0 shl 1;
-        y0 := y0 shl 1;
+        cellSize_ *= 2;
+        x0 := x0 * 2 - x;
+        y0 := y0 * 2 - y;
+        fixPosition;
         draw;
       end;
     end;
 
     /// уменьшить масштаб
-    procedure scaleDown;
+    procedure scaleDown(x, y: integer);
     begin
       if cellSize_ > 1 then
       begin
-        cellSize_ := cellSize_ shr 1;
-        x0 := x0 shr 1;
-        y0 := y0 shr 1;
+        cellSize_ := cellSize_ div 2;
+        x0 := (x0 + x) div 2;
+        y0 := (y0 + y) div 2;
         fixPosition;
         draw;
       end;
@@ -273,6 +280,8 @@ type
     /// обработчик изменения размера окна
     procedure resize;
     begin
+      x0 += (window.Width - width) div 2;
+      y0 += (window.Height - height) div 2;
       width := window.Width;
       height := window.Height;
       fixPosition;
@@ -380,8 +389,8 @@ type
         exit;
       case k of
         VK_Space: play;
-        VK_PageUp: vp.scaleUp;
-        VK_PageDown: vp.scaleDown;
+        VK_PageUp: vp.scaleUp(window.Width div 2, window.Height div 2);
+        VK_PageDown: vp.scaleDown(window.Width div 2, window.Height div 2);
         VK_Up: vp.move(0, vp.cellSize * moveStep);
         VK_Down: vp.move(0, vp.cellSize * -moveStep);
         VK_Left: vp.move(vp.cellSize * moveStep, 0);
