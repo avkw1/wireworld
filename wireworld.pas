@@ -39,10 +39,14 @@ type
     height: integer;
     /// размер клетки
     cellSize_: integer := 1;
+    /// максимальный размер клетки (степень 2)
+    maxCellSize_: integer := 32;
 
   public
     /// размер клетки
     property cellSize: integer read cellSize_;
+    /// максимальный размер клетки
+    property maxCellSize: integer read maxCellSize_;
     /// ширина поля в пикселях
     property fieldWidth: integer read data.nCols * cellSize_;
     /// высота поля в пикселях
@@ -228,7 +232,7 @@ type
     /// увеличить масштаб
     procedure scaleUp(x, y: integer);
     begin
-      if cellSize_ < 32 then
+      if cellSize_ < maxCellSize_ then
       begin
         cellSize_ *= 2;
         x0 := x0 * 2 - x;
@@ -296,8 +300,6 @@ type
   private
     /// область просмотра игрового поля
     vp: Viewport;
-    /// шаг перемещения при сдвиге (кол-во клеток)
-    moveStep: integer := 10;
     /// флаг остановки
     stop: boolean := true;
     /// флаг запуска тестов
@@ -391,10 +393,10 @@ type
         VK_Space: play;
         VK_PageUp: vp.scaleUp(window.Width div 2, window.Height div 2);
         VK_PageDown: vp.scaleDown(window.Width div 2, window.Height div 2);
-        VK_Up: vp.move(0, vp.cellSize * moveStep);
-        VK_Down: vp.move(0, vp.cellSize * -moveStep);
-        VK_Left: vp.move(vp.cellSize * moveStep, 0);
-        VK_Right: vp.move(vp.cellSize * -moveStep, 0);
+        VK_Up: vp.move(0, vp.maxCellSize);
+        VK_Down: vp.move(0, -vp.maxCellSize);
+        VK_Left: vp.move(vp.maxCellSize, 0);
+        VK_Right: vp.move(-vp.maxCellSize, 0);
         VK_Home: vp.scaleTo1;
       end;
       if stop then
