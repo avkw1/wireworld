@@ -22,6 +22,8 @@ type
     state_: CellState;
     /// новое состояние
     newState: CellState;
+    /// потенциал (в соседней клетке есть сигнал)
+    potential: boolean;
     /// флаг изменения состояния
     changed: boolean;
     /// соседи
@@ -84,12 +86,25 @@ type
         setState(wire);
     end;
 
+    /// установить потенциалы соседним клеткам
+    procedure setNeighborPotentials;
+    begin
+      for var i := 0 to neighbors.GetUpperBound(0) do
+      begin
+        var n := neighbors[i];
+        if n.newState = wire then
+          n.potential := true;
+      end;
+    end;
+
     /// вычислить новое состояние
     procedure calcNewState;
     begin
       case state_ of
         wire:
+          if potential then
           begin
+            potential := false;
             var count := 0;
             for var i := 0 to neighbors.GetUpperBound(0) do
               if neighbors[i].state_ = signal then
@@ -110,6 +125,8 @@ type
       begin
         state_ := newState;
         changed := true;
+        if state_ = signal then
+          setNeighborPotentials;
       end;
     end;
 
@@ -130,8 +147,8 @@ type
     cells: array [,] of Cell;
     /// номер поколения
     genNumber_: cardinal;
-    /// флаг установки соседей
-    neighborsSet: boolean;
+    /// флаг подготовки к расчёту поколений
+    prepared: boolean;
 
   public
     /// количество строк
@@ -164,7 +181,7 @@ type
     /// установить состояние клетки
     procedure setCellState(i, j: integer; cs: CellState);
     begin
-      neighborsSet := false;
+      prepared := false;
       if cs = empty then
         cells[i, j] := nil
       else
@@ -182,7 +199,7 @@ type
     /// "инкремент" состояния клетки
     procedure incCellState(i, j: integer);
     begin
-      neighborsSet := false;
+      prepared := false;
       if cells[i, j] = nil then
         cells[i, j] := new Cell;
       cells[i, j].incState;
@@ -193,7 +210,7 @@ type
     /// "декремент" состояния клетки
     procedure decCellState(i, j: integer);
     begin
-      neighborsSet := false;
+      prepared := false;
       if cells[i, j] = nil then
         cells[i, j] := new Cell;
       cells[i, j].decState;
@@ -217,8 +234,8 @@ type
         result := false;
     end;
 
-    /// связать с соседями
-    procedure setNeighbors;
+    /// подготовить к расчёту поколений
+    procedure prepare;
     begin
       for var i := 0 to nRows - 1 do
       begin
@@ -239,9 +256,13 @@ type
             var j2 := j + 1;
             if j2 = nCols then
               j2 := 0;
+            // связать с соседями
             c.setNeighbors(
               cells[i1, j], cells[i1, j2], cells[i, j2], cells[i2, j2],
               cells[i2, j], cells[i2, j1], cells[i, j1], cells[i1, j1]);
+            // установить потенциалы для сигналов
+            if c.state = signal then
+              c.setNeighborPotentials;
           end;
         end;
       end;
@@ -250,10 +271,10 @@ type
     /// переход к следующему поколению
     procedure nextGeneration;
     begin
-      if not neighborsSet then
+      if not prepared then
       begin
-        setNeighbors;
-        neighborsSet := true;
+        prepare;
+        prepared := true;
       end;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
