@@ -306,10 +306,8 @@ type
     test: boolean;
     /// имя файла с картинкой
     wwFileName := 'ww800x600.gif';
-    /// быстрый режим (эксперимент)
-    fastMode: boolean := false;
-    /// количество шагов без перерисовки для быстрого режима
-    fastModeSteps: integer := 100;
+    /// пропуск кадров (рисования поколений)
+    skipFrames: integer;
 
   public
     constructor Create;
@@ -348,14 +346,9 @@ type
       begin
         stop := false;
         repeat
-          if fastMode then
-          begin // быстрый режим
-            loop fastModeSteps - 1 do
-              vp.nextGeneration(false);
-            vp.nextGeneration;
-          end
-          else // обычный режим
-            vp.nextGeneration;
+          loop skipFrames do
+            vp.nextGeneration(false); // пропуск рисования
+          vp.nextGeneration;
           System.Windows.Forms.Application.DoEvents;
         until stop;
       end
