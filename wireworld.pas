@@ -324,6 +324,8 @@ type
         'Эмулятор клеточного автомата Wireworld' + #10 + #10 + #10 +
         'Управление программой:' + #10 + #10 +
         '<Пробел> - запустить/остановить смену поколений' + #10 +
+        '<+> - увеличить пропуск кадров' + #10 +
+        '<-> - уменьшить пропуск кадров' + #10 +
         '<PageUp> - увеличить масштаб' + #10 +
         '<PageDown> - уменьшить масштаб' + #10 +
         '<Home> - восстановить начальный масштаб и размер окна' + #10 +
@@ -354,6 +356,34 @@ type
       end
       else
         stop := true;
+    end;
+
+    /// увеличить пропуск кадров
+    procedure incSkipFrames;
+    begin
+      case skipFrames of
+        0..8: inc(skipFrames);
+        9: skipFrames := 19;
+        19: skipFrames := 49;
+        49: skipFrames := 99;
+        99: skipFrames := 199;
+        199: skipFrames := 499;
+        499: skipFrames := 999;
+      end;
+    end;
+
+    /// уменьшить пропуск кадров
+    procedure decSkipFrames;
+    begin
+      case skipFrames of
+        1..9: dec(skipFrames);
+        19: skipFrames := 9;
+        49: skipFrames := 19;
+        99: skipFrames := 49;
+        199: skipFrames := 99;
+        499: skipFrames := 199;
+        999: skipFrames := 499;
+      end;
     end;
 
     /// выполнить тесты производительности
@@ -408,6 +438,8 @@ type
       case k of
         VK_F1: help;
         VK_Space: play;
+        VK_Add: incSkipFrames;
+        VK_Subtract: decSkipFrames;
         VK_PageUp: vp.scaleUp(window.Width div 2, window.Height div 2);
         VK_PageDown: vp.scaleDown(window.Width div 2, window.Height div 2);
         VK_Up: vp.move(0, vp.maxCellSize);
