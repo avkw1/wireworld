@@ -450,14 +450,27 @@ type
         System.Windows.Forms.Application.DoEvents;
       end;
       var t2 := MillisecondsDelta;
+      // тест 3 (полная перерисовка - Viewport.draw)
+      name := 'Тест 3 запущен...';
+      setWindowTitle;
+      Milliseconds;
+      loop 50 do
+      begin
+        vp.draw;
+        System.Windows.Forms.Application.DoEvents;
+      end;
+      var t3 := MillisecondsDelta;
+      name := n;
+      setWindowTitle;
       System.Windows.Forms.MessageBox.Show(
         'Тест 1 (1000 поколений без рисования) : ' + t1 / 1000 + ' с' + #10 +
         'Тест 2 (1000 поколений с рисованием)  : ' + t2 / 1000 + ' с' + #10 +
+        'Тест 3 (50 полных перерисовок)        : ' + t3 / 1000 + ' с' + #10 +
         'Скорость без рисования : ' + 60000000 div t1 + ' поколений в минуту' + #10 +
-        'Скорость с рисованием  : ' + 60000000 div t2 + ' поколений в минуту',
+        'Скорость с рисованием  : ' + 60000000 div t2 + ' поколений в минуту' + #10 +
+        'Скорость п.перерисовки : ' + 3000000 div t3 +
+        ' кадров в минуту (' + round(50000/t3, 2) + ' к/с)' +  #10,
         'Результаты тестов производительности');
-      name := n;
-      setWindowTitle;
       test := false;
     end;
 
