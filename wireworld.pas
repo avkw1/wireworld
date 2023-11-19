@@ -25,8 +25,6 @@ type
     static signalTailColor: Color := RGB(0, 128, 255); // ff0080ff
 
   private
-    /// название (для заголовка окна)
-    name: string;
     /// данные (поле)
     data: Field;
     /// горизонтальная координата поля
@@ -43,6 +41,8 @@ type
     maxCellSize_: integer := 32;
 
   public
+    /// номер поколения
+    property genNumber: cardinal read data.genNumber;
     /// размер клетки
     property cellSize: integer read cellSize_;
     /// максимальный размер клетки
@@ -75,18 +75,11 @@ type
         result := signalTail;
     end;
 
-    constructor Create(name: string := 'Wireworld');
+    constructor Create;
     begin
-      self.name := name;
       width := window.Width;
       height := window.Height;
       data := new Field(height, width);
-    end;
-
-    /// установить заголовок окна
-    procedure setWindowTitle;
-    begin
-      window.Title := name + ' [Поколение ' + data.genNumber + ']';
     end;
 
     /// нарисовать клетку по координатам
@@ -107,7 +100,6 @@ type
     /// нарисовать
     procedure draw;
     begin
-      setWindowTitle;
       LockDrawing;
       // если окно больше поля, то нарисовать фон
       if (fieldHeight < height) or (fieldWidth < width) then
@@ -137,7 +129,6 @@ type
     /// нарисовать только изменившиеся клетки
     procedure drawChanged;
     begin
-      setWindowTitle;
       LockDrawing;
       // расчёт индексов для рисования только клеток, попадающих в окно
       var iBegin := max(0, floor((-y0) / cellSize_));
@@ -298,6 +289,8 @@ type
   /// Управляющий класс
   Control = class
   private
+    /// название (для заголовка окна)
+    name: string;
     /// область просмотра игрового поля
     vp: Viewport;
     /// флаг остановки
@@ -310,11 +303,24 @@ type
     skipFrames: integer;
 
   public
-    constructor Create;
+    constructor Create(name: string := 'Wireworld');
     begin
+      self.name := name;
       vp := new Viewport;
       vp.loadPicture(wwFileName);
-      window.Title := window.Title + ' > > > Для справки нажмите F1 ! < < <';
+      setWindowTitle('> > > Для справки нажмите F1 ! < < <');
+    end;
+
+    /// установить заголовок окна
+    procedure setWindowTitle(message: string := nil);
+    begin
+      var t := name + ' ';
+      if skipFrames > 0 then
+        t += '[Пропуск кадров ' + skipFrames + '] ';
+      t += '[Поколение ' + vp.genNumber + '] ';
+      if message <> nil then
+        t += message;
+      window.Title := t;
     end;
 
     /// показать справку
@@ -351,6 +357,7 @@ type
           loop skipFrames do
             vp.nextGeneration(false); // пропуск рисования
           vp.nextGeneration;
+          setWindowTitle;
           System.Windows.Forms.Application.DoEvents;
         until stop;
       end
@@ -370,6 +377,7 @@ type
         199: skipFrames := 499;
         499: skipFrames := 999;
       end;
+      setWindowTitle;
     end;
 
     /// уменьшить пропуск кадров
@@ -384,12 +392,42 @@ type
         499: skipFrames := 199;
         999: skipFrames := 499;
       end;
+      setWindowTitle;
+    end;
+
+    /// один шаг (одно поколение)
+    procedure nextGeneration;
+    begin
+      vp.nextGeneration;
+      setWindowTitle;
+    end;
+
+    /// очистить поле (все клетки пустые)
+    procedure clear;
+    begin
+      vp.clear;
+      setWindowTitle;
+    end;
+
+    /// очистить сигналы
+    procedure clearSignals;
+    begin
+      vp.clearSignals;
+      setWindowTitle;
+    end;
+
+    /// загрузить изображение
+    procedure loadPicture;
+    begin
+      vp.loadPicture(wwFileName);
+      setWindowTitle;
     end;
 
     /// выполнить тесты производительности
     procedure performanceTests;
     begin
       test := true;
+      skipFrames := 0;
       // тест 1 (без рисования)
       vp.scaleTo1;
       vp.loadPicture(wwFileName);
@@ -400,13 +438,15 @@ type
       var t1 := MillisecondsDelta;
       // тест 2 (с рисованием)
       System.Windows.Forms.Application.DoEvents;
-      var n := vp.name;
-      vp.name := 'Тест 2 запущен...';
+      var n := name;
+      name := 'Тест 2 запущен...';
       vp.loadPicture(wwFileName);
+      setWindowTitle;
       Milliseconds;
       loop 1000 do
       begin
         vp.nextGeneration;
+        setWindowTitle;
         System.Windows.Forms.Application.DoEvents;
       end;
       var t2 := MillisecondsDelta;
@@ -416,8 +456,8 @@ type
         'Скорость без рисования : ' + 60000000 div t1 + ' поколений в минуту' + #10 +
         'Скорость с рисованием  : ' + 60000000 div t2 + ' поколений в минуту',
         'Результаты тестов производительности');
-      vp.name := n;
-      vp.setWindowTitle;
+      name := n;
+      setWindowTitle;
       test := false;
     end;
 
@@ -450,10 +490,10 @@ type
       end;
       if stop then
         case k of
-          VK_Enter: vp.nextGeneration;
-          VK_Delete: vp.clear;
-          VK_Back: vp.clearSignals;
-          VK_Insert: vp.loadPicture(wwFileName);
+          VK_Enter: nextGeneration;
+          VK_Delete: clear;
+          VK_Back: clearSignals;
+          VK_Insert: loadPicture;
           VK_F2: performanceTests;
         end
     end;
