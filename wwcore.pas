@@ -23,7 +23,7 @@ type
     /// новое состояние
     newState: CellState;
     /// потенциал (в соседней клетке есть сигнал)
-    potential: boolean;
+    potential: integer;
     /// флаг изменения состояния
     changed: boolean;
     /// соседи
@@ -86,6 +86,12 @@ type
         setState(wire);
     end;
 
+    /// очистить (обнулить) потенциал
+    procedure clearPotential;
+    begin
+      potential := 0;
+    end;
+
     /// установить потенциалы соседним клеткам
     procedure setNeighborPotentials;
     begin
@@ -93,7 +99,7 @@ type
       begin
         var n := neighbors[i];
         if n.newState = wire then
-          n.potential := true;
+          inc(n.potential);
       end;
     end;
 
@@ -102,16 +108,11 @@ type
     begin
       case state_ of
         wire:
-          if potential then
+          if potential > 0 then
           begin
-            potential := false;
-            var count := 0;
-            for var i := 0 to neighbors.GetUpperBound(0) do
-              if neighbors[i].state_ = signal then
-                inc(count);
-            if count < 1 then exit;
-            if count > 2 then exit;
-            newState := signal;
+            if potential < 3 then
+              newState := signal;
+            potential := 0;
           end;
         signal: newState := signalTail;
         signalTail: newState := wire;
@@ -238,6 +239,13 @@ type
     procedure prepare;
     begin
       for var i := 0 to nRows - 1 do
+        for var j := 0 to nCols - 1 do
+        begin
+          var c := cells[i, j];
+          if c <> nil then
+            c.clearPotential;
+        end;
+      for var i := 0 to nRows - 1 do
       begin
         var i1 := i - 1;
         if i1 < 0 then
@@ -305,6 +313,7 @@ type
     /// очистить сигналы
     procedure clearSignals;
     begin
+      prepared := false;
       genNumber_ := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
