@@ -146,12 +146,16 @@ type
       var jBegin := max(0, floor((-x0) / cellSize_));
       var iEnd := min(ceil((height - y0) / cellSize_) - 1, data.nRows - 1);
       var jEnd := min(ceil((width - x0) / cellSize_) - 1, data.nCols - 1);
+      var y := y0 + iBegin * cellSize_;
       for var i := iBegin to iEnd do
+      begin
         for var j := jBegin to jEnd do
           // флаг изменения сбрасывается после чтения
           if data.cellStateChanged(i, j) then
             // нарисовать клетку, если она изменилась
-            drawCell(i, j);
+            drawCell(i, j, x0 + j * cellSize_, y);
+        y += cellSize_;
+      end;
       UnlockDrawing;
     end;
 
