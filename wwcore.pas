@@ -241,12 +241,17 @@ type
         result := false;
     end;
 
-    /// сбросить флаг изменения состояния клетки
-    procedure cellClearChanged(i, j: integer);
+    /// проверить, что клетка не пустая и сбросить флаг изменения
+    function cellNotEmptyClearChanged(i, j: integer): boolean;
     begin
       var c := cells[i, j];
       if c <> nil then
+      begin
         c.clearChanged;
+        result := true;
+      end
+      else
+        result := false;
     end;
 
     /// подготовить к расчёту поколений

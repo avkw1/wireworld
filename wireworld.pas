@@ -104,6 +104,10 @@ type
       // если окно больше поля, то нарисовать фон
       if (fieldHeight < height) or (fieldWidth < width) then
         clearWindow(bgColor);
+      // нарисовать все пустые клетки (одним прямоугольником)
+      SetBrushColor(emptyColor);
+      FillRectangle(max(0, x0), max(0, y0), min(width, x0 + fieldWidth),
+        min(height, y0 + fieldHeight));
       // расчёт индексов для рисования только клеток, попадающих в окно
       var iBegin := max(0, floor((-y0) / cellSize_));
       var jBegin := max(0, floor((-x0) / cellSize_));
@@ -115,10 +119,9 @@ type
         var x := x0 + jBegin * cellSize_;
         for var j := jBegin to jEnd do
         begin
-          // сбросить флаг изменения
-          data.cellClearChanged(i, j);
-          // нарисовать клетку
-          drawCell(i, j, x, y);
+          if data.cellNotEmptyClearChanged(i, j) then
+            // нарисовать клетку
+            drawCell(i, j, x, y);
           x += cellSize_;
         end;
         y += cellSize_;
