@@ -138,6 +138,12 @@ type
       changed := false;
     end;
 
+    /// сбросить флаг изменения состояния
+    procedure clearChanged;
+    begin
+      changed := false;
+    end;
+
   end;
 
   //////////////////////////////////////////////////////////////////////////////
@@ -233,6 +239,14 @@ type
         result := c.stateChanged
       else
         result := false;
+    end;
+
+    /// сбросить флаг изменения состояния клетки
+    procedure cellClearChanged(i, j: integer);
+    begin
+      var c := cells[i, j];
+      if c <> nil then
+        c.clearChanged;
     end;
 
     /// подготовить к расчёту поколений

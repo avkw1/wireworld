@@ -116,7 +116,7 @@ type
         for var j := jBegin to jEnd do
         begin
           // сбросить флаг изменения
-          data.cellStateChanged(i, j);
+          data.cellClearChanged(i, j);
           // нарисовать клетку
           drawCell(i, j, x, y);
           x += cellSize_;
