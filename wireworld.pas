@@ -39,6 +39,8 @@ type
     cellSize_: integer := 1;
     /// максимальный размер клетки (степень 2)
     maxCellSize_: integer := 32;
+    /// состояние предыдущей нарисованной клетки
+    prevCellState: CellState;
 
   public
     /// номер поколения
@@ -85,7 +87,12 @@ type
     /// нарисовать клетку по координатам
     procedure drawCell(i, j, x, y: integer);
     begin
-      SetBrushColor(cellStateToColor(data.getCellState(i, j)));
+      var cs := data.getCellState(i, j);
+      if prevCellState <> cs then
+      begin
+        SetBrushColor(cellStateToColor(cs));
+        prevCellState := cs;
+      end;
       FillRectangle(x, y, x + cellSize_, y + cellSize_);
     end;
 
@@ -106,6 +113,7 @@ type
         clearWindow(bgColor);
       // нарисовать все пустые клетки (одним прямоугольником)
       SetBrushColor(emptyColor);
+      prevCellState := empty;
       FillRectangle(max(0, x0), max(0, y0), min(width, x0 + fieldWidth),
         min(height, y0 + fieldHeight));
       // расчёт индексов для рисования только клеток, попадающих в окно
