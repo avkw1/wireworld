@@ -155,6 +155,8 @@ type
     genNumber_: cardinal;
     /// флаг подготовки к расчёту поколений
     prepared: boolean;
+    /// граничные индексы (для пропуска пустых строк/столбцов)
+    iMin, iMax, jMin, jMax: integer;
 
   public
     /// количество строк
@@ -253,17 +255,89 @@ type
         result := false;
     end;
 
+    /// найти граничные индексы (область, где есть не пустые клетки)
+    procedure findMinMaxIndexes;
+    begin
+      var iEnd := nRows - 1;
+      var jEnd := nCols - 1;
+      iMin := -1;
+      iMax := -1;
+      jMin := -1;
+      jMax := -1;
+      // поиск iMin
+      for var i := 0 to iEnd do
+      begin
+        for var j := 0 to jEnd do
+          if cells[i, j] <> nil then
+          begin
+            iMin := i;
+            break;
+          end;
+        if iMin >= 0 then
+          break;
+      end;
+      // если все клетки пустые
+      if iMin = -1 then
+      begin
+        iMin := 0;
+        iMax := 0;
+        jMin := 0;
+        jMax := 0;
+        exit;
+      end;
+      // поиск jMin
+      for var j := 0 to jEnd do
+      begin
+        for var i := iMin to iEnd do
+          if cells[i, j] <> nil then
+          begin
+            jMin := j;
+            break;
+          end;
+        if jMin >= 0 then
+          break;
+      end;
+      // поиск iMax
+      for var i := iEnd downto iMin do
+      begin
+        for var j := jEnd downto jMin do
+          if cells[i, j] <> nil then
+          begin
+            iMax := i;
+            break;
+          end;
+        if iMax >= 0 then
+          break;
+      end;
+      // поиск jMax
+      for var j := jEnd downto jMin do
+      begin
+        for var i := iMax downto iMin do
+          if cells[i, j] <> nil then
+          begin
+            jMax := j;
+            break;
+          end;
+        if jMax >= 0 then
+          break;
+      end;
+    end;
+
     /// подготовить к расчёту поколений
     procedure prepare;
     begin
-      for var i := 0 to nRows - 1 do
-        for var j := 0 to nCols - 1 do
+      // найти граничные индексы
+      findMinMaxIndexes;
+      // очистить все потенциалы
+      for var i := iMin to iMax do
+        for var j := jMin to jMax do
         begin
           var c := cells[i, j];
           if c <> nil then
             c.clearPotential;
         end;
-      for var i := 0 to nRows - 1 do
+      // связать с соседями (поверхность тора), установить потенциалы
+      for var i := iMin to iMax do
       begin
         var i1 := i - 1;
         if i1 < 0 then
@@ -271,7 +345,7 @@ type
         var i2 := i + 1;
         if i2 = nRows then
           i2 := 0;
-        for var j := 0 to nCols - 1 do
+        for var j := jMin to jMax do
         begin
           var c := cells[i, j];
           if c <> nil then
@@ -292,26 +366,24 @@ type
           end;
         end;
       end;
+      prepared := true;
     end;
 
     /// переход к следующему поколению
     procedure nextGeneration;
     begin
       if not prepared then
-      begin
         prepare;
-        prepared := true;
-      end;
-      for var i := 0 to nRows - 1 do
-        for var j := 0 to nCols - 1 do
+      for var i := iMin to iMax do
+        for var j := jMin to jMax do
         begin
           var c := cells[i, j];
           if c <> nil then
             c.calcNewState;
         end;
       inc(genNumber_);
-      for var i := 0 to nRows - 1 do
-        for var j := 0 to nCols - 1 do
+      for var i := iMin to iMax do
+        for var j := jMin to jMax do
         begin
           var c := cells[i, j];
           if c <> nil then
