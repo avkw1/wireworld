@@ -155,8 +155,10 @@ type
     genNumber_: cardinal;
     /// флаг подготовки к расчёту поколений
     prepared: boolean;
-    /// граничные индексы (для пропуска пустых строк/столбцов)
-    iMin, iMax, jMin, jMax: integer;
+    /// граничные индексы (для пропуска пустых строк сверху и снизу)
+    iMin, iMax: integer;
+    /// граничные индексы (для пропуска пустых клеток слева и справа)
+    jMin, jMax: array of integer;
 
   public
     /// количество строк
@@ -166,14 +168,11 @@ type
     /// номер поколения
     property genNumber: cardinal read genNumber_;
 
-    constructor Create;
-    begin
-      cells := new Cell[0, 0];
-    end;
-
     constructor Create(nRows, nCols: integer);
     begin
       cells := new Cell[nRows, nCols];
+      jMin := new integer[nRows];
+      jMax := new integer[nRows];
     end;
 
     /// вернуть состояние клетки
@@ -260,11 +259,8 @@ type
     begin
       var iEnd := nRows - 1;
       var jEnd := nCols - 1;
-      iMin := -1;
-      iMax := -1;
-      jMin := -1;
-      jMax := -1;
       // поиск iMin
+      iMin := -1;
       for var i := 0 to iEnd do
       begin
         for var j := 0 to jEnd do
@@ -281,26 +277,18 @@ type
       begin
         iMin := 0;
         iMax := 0;
-        jMin := 0;
-        jMax := 0;
+        for var i := 0 to iEnd do
+        begin
+          jMin[i] := 0;
+          jMax[i] := 0;
+        end;
         exit;
       end;
-      // поиск jMin
-      for var j := 0 to jEnd do
-      begin
-        for var i := iMin to iEnd do
-          if cells[i, j] <> nil then
-          begin
-            jMin := j;
-            break;
-          end;
-        if jMin >= 0 then
-          break;
-      end;
       // поиск iMax
+      iMax := -1;
       for var i := iEnd downto iMin do
       begin
-        for var j := jEnd downto jMin do
+        for var j := jEnd downto 0 do
           if cells[i, j] <> nil then
           begin
             iMax := i;
@@ -309,17 +297,27 @@ type
         if iMax >= 0 then
           break;
       end;
-      // поиск jMax
-      for var j := jEnd downto jMin do
+      // заполнение jMin и jMax
+      for var i := 0 to iEnd do
       begin
-        for var i := iMax downto iMin do
+        if (i < iMin) or (i > iMax) then
+        begin
+          jMin[i] := 0;
+          jMax[i] := 0;
+          continue;
+        end;
+        for var j := 0 to jEnd do
           if cells[i, j] <> nil then
           begin
-            jMax := j;
+            jMin[i] := j;
             break;
           end;
-        if jMax >= 0 then
-          break;
+        for var j := jEnd downto 0 do
+          if cells[i, j] <> nil then
+          begin
+            jMax[i] := j;
+            break;
+          end;
       end;
     end;
 
@@ -330,7 +328,7 @@ type
       findMinMaxIndexes;
       // очистить все потенциалы
       for var i := iMin to iMax do
-        for var j := jMin to jMax do
+        for var j := jMin[i] to jMax[i] do
         begin
           var c := cells[i, j];
           if c <> nil then
@@ -345,7 +343,7 @@ type
         var i2 := i + 1;
         if i2 = nRows then
           i2 := 0;
-        for var j := jMin to jMax do
+        for var j := jMin[i] to jMax[i] do
         begin
           var c := cells[i, j];
           if c <> nil then
@@ -375,7 +373,7 @@ type
       if not prepared then
         prepare;
       for var i := iMin to iMax do
-        for var j := jMin to jMax do
+        for var j := jMin[i] to jMax[i] do
         begin
           var c := cells[i, j];
           if c <> nil then
@@ -383,7 +381,7 @@ type
         end;
       inc(genNumber_);
       for var i := iMin to iMax do
-        for var j := jMin to jMax do
+        for var j := jMin[i] to jMax[i] do
         begin
           var c := cells[i, j];
           if c <> nil then
