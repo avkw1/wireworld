@@ -259,8 +259,9 @@ type
     begin
       var iEnd := nRows - 1;
       var jEnd := nCols - 1;
-      // поиск iMin
       iMin := -1;
+      iMax := -1;
+      // поиск iMin
       for var i := 0 to iEnd do
       begin
         for var j := 0 to jEnd do
@@ -276,16 +277,14 @@ type
       if iMin = -1 then
       begin
         iMin := 0;
-        iMax := 0;
         for var i := 0 to iEnd do
         begin
           jMin[i] := 0;
-          jMax[i] := 0;
+          jMax[i] := -1;
         end;
         exit;
       end;
       // поиск iMax
-      iMax := -1;
       for var i := iEnd downto iMin do
       begin
         for var j := jEnd downto 0 do
@@ -303,7 +302,7 @@ type
         if (i < iMin) or (i > iMax) then
         begin
           jMin[i] := 0;
-          jMax[i] := 0;
+          jMax[i] := -1;
           continue;
         end;
         for var j := 0 to jEnd do
@@ -392,6 +391,7 @@ type
     /// очистить (все клетки пустые)
     procedure clear;
     begin
+      prepared := false;
       genNumber_ := 0;
       for var i := 0 to nRows - 1 do
         for var j := 0 to nCols - 1 do
