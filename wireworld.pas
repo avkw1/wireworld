@@ -187,7 +187,6 @@ type
       var p: Picture := new Picture(fname);
       if (p.Height = data.nRows) and (p.Width = data.nCols) then
       begin
-        data.clearGenNumber;
         for var i := 0 to data.nRows - 1 do
           for var j := 0 to data.nCols - 1 do
             data.setCellState(i, j, colorToCellState(p.GetPixel(j, i)));
@@ -495,7 +494,10 @@ type
       if test then
         exit;
       if stop then
+      begin
         vp.mouseDown(x, y, mb);
+        setWindowTitle;
+      end;
     end;
 
     /// обработчик клавиатуры

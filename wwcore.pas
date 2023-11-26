@@ -189,6 +189,7 @@ type
     procedure setCellState(i, j: integer; cs: CellState);
     begin
       prepared := false;
+      genNumber_ := 0;
       if cs = empty then
         cells[i, j] := nil
       else
@@ -207,6 +208,7 @@ type
     procedure incCellState(i, j: integer);
     begin
       prepared := false;
+      genNumber_ := 0;
       if cells[i, j] = nil then
         cells[i, j] := new Cell;
       cells[i, j].incState;
@@ -218,17 +220,12 @@ type
     procedure decCellState(i, j: integer);
     begin
       prepared := false;
+      genNumber_ := 0;
       if cells[i, j] = nil then
         cells[i, j] := new Cell;
       cells[i, j].decState;
       if cells[i, j].state = empty then
         cells[i, j] := nil;
-    end;
-
-    /// обнулить номер поколения
-    procedure clearGenNumber;
-    begin
-      genNumber_ := 0;
     end;
 
     /// состояние клетки изменилось?
