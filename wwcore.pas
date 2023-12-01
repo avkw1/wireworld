@@ -28,12 +28,22 @@ type
     /// соседи
     neighbors: array of Cell;
 
-  private
     /// установить состояние
     procedure setState(cs: CellState);
     begin
       state_ := cs;
       newState := cs;
+    end;
+
+    /// установить потенциалы соседним клеткам
+    procedure setNeighborPotentials;
+    begin
+      for var i := 0 to neighbors.GetUpperBound(0) do
+      begin
+        var n := neighbors[i];
+        if n.newState = wire then
+          inc(n.potential);
+      end;
     end;
 
   public
@@ -54,6 +64,9 @@ type
       if n7 <> nil then begin neighbors[i] := n7; inc(i) end;
       if n8 <> nil then begin neighbors[i] := n8; inc(i) end;
       SetLength(neighbors, i);
+      // установить потенциалы для сигналов
+      if state_ = signal then
+        setNeighborPotentials;
     end;
 
     /// "инкремент" состояния
@@ -89,17 +102,6 @@ type
     procedure clearPotential;
     begin
       potential := 0;
-    end;
-
-    /// установить потенциалы соседним клеткам
-    procedure setNeighborPotentials;
-    begin
-      for var i := 0 to neighbors.GetUpperBound(0) do
-      begin
-        var n := neighbors[i];
-        if n.newState = wire then
-          inc(n.potential);
-      end;
     end;
 
     /// вычислить новое состояние
@@ -350,13 +352,10 @@ type
             var j2 := j + 1;
             if j2 = nCols then
               j2 := 0;
-            // связать с соседями
+            // связать с соседями, установить потенциалы
             c.setNeighbors(
               cells[i1, j], cells[i1, j2], cells[i, j2], cells[i2, j2],
               cells[i2, j], cells[i2, j1], cells[i, j1], cells[i1, j1]);
-            // установить потенциалы для сигналов
-            if c.state = signal then
-              c.setNeighborPotentials;
           end;
         end;
       end;
