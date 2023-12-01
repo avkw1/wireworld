@@ -274,7 +274,7 @@ public
     begin
       var i := (y - y0) div cellSize_;
       var j := (x - x0) div cellSize_;
-      if (i >= data.nRows) or (j >= data.nCols) then
+      if (i < 0) or (j < 0) or (i >= data.nRows) or (j >= data.nCols) then
         exit;
       case mb of
         1: data.incCellState(i, j);
