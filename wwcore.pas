@@ -230,27 +230,27 @@ type
         cells[i, j] := nil;
     end;
 
-    /// состояние клетки изменилось?
-    function cellStateChanged(i, j: integer): boolean;
+    /// вернуть состояние клетки, если оно изменилось, иначе вернуть empty
+    function getCellStateIfChanged(i, j: integer): CellState;
     begin
       var c := cells[i, j];
-      if c <> nil then
-        result := c.stateChanged
+      if (c <> nil) and c.stateChanged then
+        result := c.state
       else
-        result := false;
+        result := empty;
     end;
 
-    /// проверить, что клетка не пустая и сбросить флаг изменения
-    function cellNotEmptyClearChanged(i, j: integer): boolean;
+    /// вернуть состояние клетки и сбросить флаг изменения
+    function getCellStateClearChanged(i, j: integer): CellState;
     begin
       var c := cells[i, j];
       if c <> nil then
       begin
         c.clearChanged;
-        result := true;
+        result := c.state;
       end
       else
-        result := false;
+        result := empty;
     end;
 
   private

@@ -84,10 +84,10 @@ type
       data := new Field(height, width);
     end;
 
-    /// нарисовать клетку по координатам
-    procedure drawCell(i, j, x, y: integer);
+private
+    /// нарисовать клетку
+    procedure drawCell(cs: CellState; x, y: integer);
     begin
-      var cs := data.getCellState(i, j);
       if prevCellState <> cs then
       begin
         SetBrushColor(cellStateToColor(cs));
@@ -96,14 +96,7 @@ type
       FillRectangle(x, y, x + cellSize_, y + cellSize_);
     end;
 
-    /// нарисовать клетку, вычислив координаты
-    procedure drawCell(i, j: integer);
-    begin
-      var x := x0 + j * cellSize_;
-      var y := y0 + i * cellSize_;
-      drawCell(i, j, x, y);
-    end;
-
+public
     /// нарисовать
     procedure draw;
     begin
@@ -127,9 +120,10 @@ type
         var x := x0 + jBegin * cellSize_;
         for var j := jBegin to jEnd do
         begin
-          if data.cellNotEmptyClearChanged(i, j) then
+          var cs := data.getCellStateClearChanged(i, j);
+          if cs <> empty then
             // нарисовать клетку
-            drawCell(i, j, x, y);
+            drawCell(cs, x, y);
           x += cellSize_;
         end;
         y += cellSize_;
@@ -150,10 +144,13 @@ type
       for var i := iBegin to iEnd do
       begin
         for var j := jBegin to jEnd do
+        begin
           // флаг изменения сбрасывается после чтения
-          if data.cellStateChanged(i, j) then
+          var cs := data.getCellStateIfChanged(i, j);
+          if cs <> empty then
             // нарисовать клетку, если она изменилась
-            drawCell(i, j, x0 + j * cellSize_, y);
+            drawCell(cs, x0 + j * cellSize_, y);
+        end;
         y += cellSize_;
       end;
       UnlockDrawing;
@@ -283,7 +280,7 @@ type
         1: data.incCellState(i, j);
         2: data.decCellState(i, j);
       end;
-      drawCell(i, j);
+      drawCell(data.getCellState(i, j), x0 + j * cellSize_, y0 + i * cellSize_);
     end;
 
     /// обработчик изменения размера окна
