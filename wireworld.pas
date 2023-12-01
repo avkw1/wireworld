@@ -44,7 +44,7 @@ type
 
   public
     /// номер поколения
-    property genNumber: cardinal read data.genNumber;
+    property genNumber: uint64 read data.genNumber;
     /// размер клетки
     property cellSize: integer read cellSize_;
     /// максимальный размер клетки
@@ -331,7 +331,7 @@ type
       var t := name + ' ';
       if skipFrames > 0 then
         t += '[Пропуск кадров ' + skipFrames + '] ';
-      t += '[Поколение ' + vp.genNumber + '] ';
+      t += '[Поколение ' + vp.genNumber.ToString + '] ';
       if message <> nil then
         t += message;
       window.Title := t;

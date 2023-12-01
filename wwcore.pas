@@ -152,7 +152,7 @@ type
     /// клетки поля
     cells: array [,] of Cell;
     /// номер поколения
-    genNumber_: cardinal;
+    genNumber_: uint64;
     /// флаг подготовки к расчёту поколений
     prepared: boolean;
     /// граничные индексы (для пропуска пустых строк сверху и снизу)
@@ -166,7 +166,7 @@ type
     /// количество столбцов
     property nCols: integer read cells.GetLength(1);
     /// номер поколения
-    property genNumber: cardinal read genNumber_;
+    property genNumber: uint64 read genNumber_;
 
     constructor Create(nRows, nCols: integer);
     begin
