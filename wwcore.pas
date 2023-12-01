@@ -253,6 +253,7 @@ type
         result := false;
     end;
 
+  private
     /// найти граничные индексы (область, где есть не пустые клетки)
     procedure findMinMaxIndexes;
     begin
@@ -362,6 +363,7 @@ type
       prepared := true;
     end;
 
+  public
     /// переход к следующему поколению
     procedure nextGeneration;
     begin
