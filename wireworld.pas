@@ -36,23 +36,20 @@ type
     /// высота
     height: integer;
     /// размер клетки
-    cellSize_: integer := 1;
+    cellSize: integer := 1;
     /// максимальный размер клетки (степень 2)
-    maxCellSize_: integer := 32;
+    maxCellSize: integer := 32;
     /// состояние предыдущей нарисованной клетки
     prevCellState: CellState;
+
+    /// ширина поля в пикселях
+    property fieldWidth: integer read data.nCols * cellSize;
+    /// высота поля в пикселях
+    property fieldHeight: integer read data.nRows * cellSize;
 
   public
     /// номер поколения
     property genNumber: uint64 read data.genNumber;
-    /// размер клетки
-    property cellSize: integer read cellSize_;
-    /// максимальный размер клетки
-    property maxCellSize: integer read maxCellSize_;
-    /// ширина поля в пикселях
-    property fieldWidth: integer read data.nCols * cellSize_;
-    /// высота поля в пикселях
-    property fieldHeight: integer read data.nRows * cellSize_;
 
     /// вернуть цвет для состояния клетки
     static function cellStateToColor(cs: CellState): Color;
@@ -84,7 +81,7 @@ type
       data := new Field(height, width);
     end;
 
-private
+  private
     /// нарисовать клетку
     procedure drawCell(cs: CellState; x, y: integer);
     begin
@@ -93,10 +90,9 @@ private
         SetBrushColor(cellStateToColor(cs));
         prevCellState := cs;
       end;
-      FillRectangle(x, y, x + cellSize_, y + cellSize_);
+      FillRectangle(x, y, x + cellSize, y + cellSize);
     end;
 
-public
     /// нарисовать
     procedure draw;
     begin
@@ -110,23 +106,23 @@ public
       FillRectangle(max(0, x0), max(0, y0), min(width, x0 + fieldWidth),
         min(height, y0 + fieldHeight));
       // расчёт индексов для рисования только клеток, попадающих в окно
-      var iBegin := max(0, floor((-y0) / cellSize_));
-      var jBegin := max(0, floor((-x0) / cellSize_));
-      var iEnd := min(ceil((height - y0) / cellSize_) - 1, data.nRows - 1);
-      var jEnd := min(ceil((width - x0) / cellSize_) - 1, data.nCols - 1);
-      var y := y0 + iBegin * cellSize_;
+      var iBegin := max(0, floor((-y0) / cellSize));
+      var jBegin := max(0, floor((-x0) / cellSize));
+      var iEnd := min(ceil((height - y0) / cellSize) - 1, data.nRows - 1);
+      var jEnd := min(ceil((width - x0) / cellSize) - 1, data.nCols - 1);
+      var y := y0 + iBegin * cellSize;
       for var i := iBegin to iEnd do
       begin
-        var x := x0 + jBegin * cellSize_;
+        var x := x0 + jBegin * cellSize;
         for var j := jBegin to jEnd do
         begin
           var cs := data.getCellStateClearChanged(i, j);
           if cs <> empty then
             // нарисовать клетку
             drawCell(cs, x, y);
-          x += cellSize_;
+          x += cellSize;
         end;
-        y += cellSize_;
+        y += cellSize;
       end;
       UnlockDrawing;
     end;
@@ -136,11 +132,11 @@ public
     begin
       LockDrawing;
       // расчёт индексов для рисования только клеток, попадающих в окно
-      var iBegin := max(0, floor((-y0) / cellSize_));
-      var jBegin := max(0, floor((-x0) / cellSize_));
-      var iEnd := min(ceil((height - y0) / cellSize_) - 1, data.nRows - 1);
-      var jEnd := min(ceil((width - x0) / cellSize_) - 1, data.nCols - 1);
-      var y := y0 + iBegin * cellSize_;
+      var iBegin := max(0, floor((-y0) / cellSize));
+      var jBegin := max(0, floor((-x0) / cellSize));
+      var iEnd := min(ceil((height - y0) / cellSize) - 1, data.nRows - 1);
+      var jEnd := min(ceil((width - x0) / cellSize) - 1, data.nCols - 1);
+      var y := y0 + iBegin * cellSize;
       for var i := iBegin to iEnd do
       begin
         for var j := jBegin to jEnd do
@@ -149,13 +145,33 @@ public
           var cs := data.getCellStateIfChanged(i, j);
           if cs <> empty then
             // нарисовать клетку, если она изменилась
-            drawCell(cs, x0 + j * cellSize_, y);
+            drawCell(cs, x0 + j * cellSize, y);
         end;
-        y += cellSize_;
+        y += cellSize;
       end;
       UnlockDrawing;
     end;
 
+    /// исправить положение поля (x0, y0)
+    procedure fixPosition;
+    begin
+      var dx := width - fieldWidth;
+      var dy := height - fieldHeight;
+      if dx >= 0 then
+        x0 := dx div 2
+      else if x0 < dx then
+        x0 := dx
+      else if x0 > 0 then
+        x0 := 0;
+      if dy >= 0 then
+        y0 := dy div 2
+      else if y0 < dy then
+        y0 := dy
+      else if y0 > 0 then
+        y0 := 0;
+    end;
+
+  public
     /// один шаг (одно поколение)
     procedure nextGeneration(draw: boolean := true);
     begin
@@ -191,32 +207,13 @@ public
       end;
     end;
 
-    /// исправить положение поля (x0, y0)
-    procedure fixPosition;
-    begin
-      var dx := width - fieldWidth;
-      var dy := height - fieldHeight;
-      if dx >= 0 then
-        x0 := dx div 2
-      else if x0 < dx then
-        x0 := dx
-      else if x0 > 0 then
-        x0 := 0;
-      if dy >= 0 then
-        y0 := dy div 2
-      else if y0 < dy then
-        y0 := dy
-      else if y0 > 0 then
-        y0 := 0;
-    end;
-
     /// установить исходный масштаб (размер клетки 1) и положение (0, 0)
     procedure scaleTo1;
     begin
       var sizeChanged := (width <> data.nCols) or (height <> data.nRows);
-      if (cellSize_ <> 1) or (x0 <> 0) or (y0 <> 0) or sizeChanged then
+      if (cellSize <> 1) or (x0 <> 0) or (y0 <> 0) or sizeChanged then
       begin
-        cellSize_ := 1;
+        cellSize := 1;
         x0 := 0;
         y0 := 0;
         // если размер окна изменён
@@ -234,9 +231,9 @@ public
     /// увеличить масштаб
     procedure scaleUp(x, y: integer);
     begin
-      if cellSize_ < maxCellSize_ then
+      if cellSize < maxCellSize then
       begin
-        cellSize_ *= 2;
+        cellSize *= 2;
         x0 := x0 * 2 - x;
         y0 := y0 * 2 - y;
         fixPosition;
@@ -247,9 +244,9 @@ public
     /// уменьшить масштаб
     procedure scaleDown(x, y: integer);
     begin
-      if cellSize_ > 1 then
+      if cellSize > 1 then
       begin
-        cellSize_ := cellSize_ div 2;
+        cellSize := cellSize div 2;
         x0 := (x0 + x) div 2;
         y0 := (y0 + y) div 2;
         fixPosition;
@@ -272,15 +269,15 @@ public
     /// обработчик мышки
     procedure mouseDown(x, y, mb: integer);
     begin
-      var i := (y - y0) div cellSize_;
-      var j := (x - x0) div cellSize_;
+      var i := (y - y0) div cellSize;
+      var j := (x - x0) div cellSize;
       if (i < 0) or (j < 0) or (i >= data.nRows) or (j >= data.nCols) then
         exit;
       case mb of
         1: data.incCellState(i, j);
         2: data.decCellState(i, j);
       end;
-      drawCell(data.getCellState(i, j), x0 + j * cellSize_, y0 + i * cellSize_);
+      drawCell(data.getCellState(i, j), x0 + j * cellSize, y0 + i * cellSize);
     end;
 
     /// обработчик изменения размера окна
