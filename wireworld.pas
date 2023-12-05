@@ -1,6 +1,6 @@
 ﻿program wireworld;
 
-uses wwcore, GraphABC;
+uses wwcore, GraphABC, System.Windows.Forms;
 
 const
   /// Количество строк поля
@@ -207,6 +207,16 @@ type
       end;
     end;
 
+    /// сохранить изображение
+    procedure savePicture(fname: string);
+    begin
+      var p: Picture := new Picture(data.nCols, data.nRows);
+      for var i := 0 to data.nRows - 1 do
+        for var j := 0 to data.nCols - 1 do
+          p.SetPixel(j, i, cellStateToColor(data.getCellState(i, j)));
+      p.Save(fname);
+    end;
+
     /// установить исходный масштаб (размер клетки 1) и положение (0, 0)
     procedure scaleTo1;
     begin
@@ -350,7 +360,9 @@ type
         '<Enter> - следующее поколение (один шаг)' + #10 +
         '<Delete> - очистить поле (сделать все клетки пустыми)' + #10 +
         '<Backspace> - удалить все сигналы (сделать сигналы проводниками)' + #10 +
-        '<Insert> - загрузить изображение из файла (' + wwFileName + ')' + #10 +
+        '<Insert> - загрузить изображение из файла ("' + wwFileName + '")' + #10 +
+        '<F3> - сохранить изображение в файл ("' +
+        wwFileName.Replace('.gif', '_<№поколения>.gif")') + #10 +
         '<F2> - запустить тесты производительности',
         'Справка');
     end;
@@ -429,6 +441,20 @@ type
     begin
       vp.loadPicture(wwFileName);
       setWindowTitle;
+    end;
+
+    /// сохранить изображение
+    procedure savePicture;
+    begin
+      var fname: string;
+      fname := wwFileName.Replace('.gif', '_') + vp.genNumber.ToString + '.gif';
+      if fileexists(fname) then
+        if MessageBox.Show(
+          'Файл "' + fname + '" уже существует! Перезаписать?"',
+          self.name, MessageBoxButtons.YesNo) = DialogResult.No then
+            exit;
+      vp.savePicture(fname);
+      MessageBox.Show('Сохранено в файл "' + fname + '".', self.name);
     end;
 
     /// выполнить тесты производительности
@@ -518,6 +544,7 @@ type
           VK_Delete: clear;
           VK_Back: clearSignals;
           VK_Insert: loadPicture;
+          VK_F3: savePicture;
           VK_F2: performanceTests;
         end
     end;
