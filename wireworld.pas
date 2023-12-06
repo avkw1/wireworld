@@ -344,7 +344,7 @@ type
     /// показать справку
     procedure help;
     begin
-      System.Windows.Forms.MessageBox.Show(
+      MessageBox.Show(
         'Эмулятор клеточного автомата Wireworld' + #10 + #10 + #10 +
         'Управление программой:' + #10 + #10 +
         '<Пробел> - запустить/остановить смену поколений' + #10 +
@@ -378,7 +378,7 @@ type
             vp.nextGeneration(false); // пропуск рисования
           vp.nextGeneration;
           setWindowTitle;
-          System.Windows.Forms.Application.DoEvents;
+          Application.DoEvents;
         until stop;
       end
       else
@@ -471,7 +471,7 @@ type
         vp.nextGeneration(false);
       var t1 := MillisecondsDelta;
       // тест 2 (с рисованием)
-      System.Windows.Forms.Application.DoEvents;
+      Application.DoEvents;
       var n := name;
       name := 'Тест 2 запущен...';
       vp.loadPicture(wwFileName);
@@ -481,7 +481,7 @@ type
       begin
         vp.nextGeneration;
         setWindowTitle;
-        System.Windows.Forms.Application.DoEvents;
+        Application.DoEvents;
       end;
       var t2 := MillisecondsDelta;
       // тест 3 (полная перерисовка - Viewport.draw)
@@ -491,12 +491,12 @@ type
       loop 100 do
       begin
         vp.draw;
-        System.Windows.Forms.Application.DoEvents;
+        Application.DoEvents;
       end;
       var t3 := MillisecondsDelta;
       name := n;
       setWindowTitle;
-      System.Windows.Forms.MessageBox.Show(
+      MessageBox.Show(
         'Тест 1 (1000 поколений без рисования) : ' + t1 / 1000 + ' с' + #10 +
         'Тест 2 (1000 поколений с рисованием)  : ' + t2 / 1000 + ' с' + #10 +
         'Тест 3 (100 полных перерисовок)       : ' + t3 / 1000 + ' с' + #10 +
