@@ -391,9 +391,12 @@ type
       case skipFrames of
         0..8: inc(skipFrames);
         9: skipFrames := 19;
-        19: skipFrames := 49;
-        49: skipFrames := 99;
-        99: skipFrames := 199;
+        19: skipFrames := 35;
+        35: skipFrames := 49;
+        49: skipFrames := 95;
+        95: skipFrames := 99;
+        99: skipFrames := 191;
+        191: skipFrames := 199;
         199: skipFrames := 499;
         499: skipFrames := 999;
       end;
@@ -406,9 +409,12 @@ type
       case skipFrames of
         1..9: dec(skipFrames);
         19: skipFrames := 9;
-        49: skipFrames := 19;
-        99: skipFrames := 49;
-        199: skipFrames := 99;
+        35: skipFrames := 19;
+        49: skipFrames := 35;
+        95: skipFrames := 49;
+        99: skipFrames := 95;
+        191: skipFrames := 99;
+        199: skipFrames := 191;
         499: skipFrames := 199;
         999: skipFrames := 499;
       end;
