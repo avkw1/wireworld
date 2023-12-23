@@ -316,9 +316,9 @@ type
     /// пропуск кадров (рисования поколений)
     skipFrames: integer;
     /// папка с картинками
-    imageDir := GetCurrentDir;
+    imageDir := GetCurrentDir + '\img';
     /// имя файла с картинкой для инициализации и теста
-    initFileName := imageDir + '\ww800x600.gif';
+    initFileName := imageDir + '\wwc_counter.gif';
     /// задача для основного потока или запуск теста
     task: integer;
     /// имя файла, выбранное в диалоговом окне
