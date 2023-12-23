@@ -313,19 +313,23 @@ type
     vp: Viewport;
     /// флаг остановки
     stop: boolean := true;
-    /// флаг запуска тестов
-    test: boolean;
-    /// имя файла с картинкой
-    wwFileName := 'ww800x600.gif';
     /// пропуск кадров (рисования поколений)
     skipFrames: integer;
+    /// папка с картинками
+    imageDir := GetCurrentDir;
+    /// имя файла с картинкой для инициализации и теста
+    initFileName := imageDir + '\ww800x600.gif';
+    /// задача для основного потока или запуск теста
+    task: integer;
+    /// имя файла, выбранное в диалоговом окне
+    fileName: string;
 
   public
     constructor Create(name: string := 'Wireworld');
     begin
       self.name := name;
       vp := new Viewport;
-      vp.loadPicture(wwFileName);
+      vp.loadPicture(initFileName);
       setWindowTitle('> > > Для справки нажмите F1 ! < < <');
     end;
 
@@ -360,9 +364,8 @@ type
         '<Enter> - следующее поколение (один шаг)' + #10 +
         '<Delete> - очистить поле (сделать все клетки пустыми)' + #10 +
         '<Backspace> - удалить все сигналы (сделать сигналы проводниками)' + #10 +
-        '<Insert> - загрузить изображение из файла ("' + wwFileName + '")' + #10 +
-        '<F3> - сохранить изображение в файл ("' +
-        wwFileName.Replace('.gif', '_<№поколения>.gif")') + #10 +
+        '<Insert> - загрузить изображение из файла' + #10 +
+        '<F3> - сохранить изображение в файл' + #10 +
         '<F2> - запустить тесты производительности',
         'Справка');
     end;
@@ -445,32 +448,39 @@ type
     /// загрузить изображение
     procedure loadPicture;
     begin
-      vp.loadPicture(wwFileName);
-      setWindowTitle;
+      task := 1;
+      repeat
+        sleep(100);
+      until task = 0;
+      if fileName.Length > 0 then
+      begin
+        vp.loadPicture(fileName);
+        setWindowTitle;
+      end;
     end;
 
     /// сохранить изображение
     procedure savePicture;
     begin
-      var fname: string;
-      fname := wwFileName.Replace('.gif', '_') + vp.genNumber.ToString + '.gif';
-      if fileexists(fname) then
-        if MessageBox.Show(
-          'Файл "' + fname + '" уже существует! Перезаписать?"',
-          self.name, MessageBoxButtons.YesNo) = DialogResult.No then
-            exit;
-      vp.savePicture(fname);
-      MessageBox.Show('Сохранено в файл "' + fname + '".', self.name);
+      task := 2;
+      repeat
+        sleep(100);
+      until task = 0;
+      if fileName.Length > 0 then
+      begin
+        vp.savePicture(fileName);
+        MessageBox.Show('Сохранено в файл "' + fileName + '".', self.name);
+      end
     end;
 
     /// выполнить тесты производительности
     procedure performanceTests;
     begin
-      test := true;
+      task := 3;
       skipFrames := 0;
       // тест 1 (без рисования)
       vp.scaleTo1;
-      vp.loadPicture(wwFileName);
+      vp.loadPicture(initFileName);
       window.Title := 'Тест 1 запущен...';
       Milliseconds;
       loop 1000 do
@@ -480,7 +490,7 @@ type
       Application.DoEvents;
       var n := name;
       name := 'Тест 2 запущен...';
-      vp.loadPicture(wwFileName);
+      vp.loadPicture(initFileName);
       setWindowTitle;
       Milliseconds;
       loop 1000 do
@@ -511,13 +521,13 @@ type
         'Скорость п.перерисовки : ' + 6000000 div t3 +
         ' кадров в минуту (' + round(100000 / t3, 2) + ' к/с)' +  #10,
         'Результаты тестов производительности');
-      test := false;
+      task := 0;
     end;
 
     /// обработчик мышки
     procedure mouseDown(x, y, mb: integer);
     begin
-      if test then
+      if task <> 0 then
         exit;
       if stop then
       begin
@@ -529,7 +539,7 @@ type
     /// обработчик клавиатуры
     procedure keyDown(k: integer);
     begin
-      if test then
+      if task <> 0 then
         exit;
       case k of
         VK_F1: help;
@@ -559,6 +569,41 @@ type
     procedure resize;
     begin
       vp.resize;
+    end;
+
+    /// цикл для основного потока
+    procedure mainThreadLoop;
+    begin
+      // Из-за особенностей реализации модуля GraphABC диалоги открытия и
+      // сохранения файлов могут быть запущены только из основного потока
+      var ofn := new OpenFileDialog;
+      ofn.InitialDirectory := imageDir;
+      ofn.DefaultExt := '.gif';
+      ofn.Filter := 'Изображения GIF (*.gif)|*.gif';
+      var sfn := new SaveFileDialog;
+      sfn.InitialDirectory := ofn.InitialDirectory;
+      sfn.DefaultExt := ofn.DefaultExt;
+      sfn.Filter := ofn.Filter;
+      while true do
+      begin
+        sleep(100);
+        if task = 1 then
+        begin
+          fileName := string.Empty;
+          ofn.FileName := string.Empty;
+          if DialogResult.OK = ofn.ShowDialog then
+            fileName := ofn.FileName;
+          task := 0;
+        end
+        else if task = 2 then
+        begin
+          fileName := string.Empty;
+          sfn.FileName := string.Empty;
+          if DialogResult.OK = sfn.ShowDialog then
+            fileName := sfn.FileName;
+          task := 0;
+        end;
+      end;
     end;
 
   end;
@@ -595,4 +640,5 @@ begin
   OnMouseDown := mouseDown;
   OnKeyDown := keyDown;
   OnResize := resize;
+  ctrl.mainThreadLoop;
 end.
