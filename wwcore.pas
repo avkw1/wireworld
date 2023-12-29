@@ -177,6 +177,16 @@ type
       jMax := new integer[nRows];
     end;
 
+    /// изменить размер поля
+    procedure resize(nRows, nCols: integer);
+    begin
+      prepared := false;
+      genNumber_ := 0;
+      SetLength(cells, nRows, nCols);
+      SetLength(jMin, nRows);
+      SetLength(jMax, nRows);
+    end;
+
     /// вернуть состояние клетки
     function getCellState(i, j: integer): CellState;
     begin

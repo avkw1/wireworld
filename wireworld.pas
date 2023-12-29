@@ -198,13 +198,15 @@ type
     procedure loadPicture(fname: string);
     begin
       var p: Picture := new Picture(fname);
-      if (p.Height = data.nRows) and (p.Width = data.nCols) then
+      if (p.Height <> data.nRows) or (p.Width <> data.nCols) then
       begin
-        for var i := 0 to data.nRows - 1 do
-          for var j := 0 to data.nCols - 1 do
-            data.setCellState(i, j, colorToCellState(p.GetPixel(j, i)));
-        draw;
+        data.resize(p.Height, p.Width);
+        fixPosition;
       end;
+      for var i := 0 to data.nRows - 1 do
+        for var j := 0 to data.nCols - 1 do
+          data.setCellState(i, j, colorToCellState(p.GetPixel(j, i)));
+      draw;
     end;
 
     /// сохранить изображение
@@ -315,21 +317,26 @@ type
     stop: boolean := true;
     /// пропуск кадров (рисования поколений)
     skipFrames: integer;
-    /// папка с картинками
-    imageDir := GetCurrentDir + '\img';
-    /// имя файла с картинкой для инициализации и теста
-    initFileName := imageDir + '\wwc_counter.gif';
     /// задача для основного потока или запуск теста
     task: integer;
-    /// имя файла, выбранное в диалоговом окне
+    /// имя загруженного файла
     fileName: string;
+    /// имя файла с картинкой для инициализации и теста
+    initFileName := GetCurrentDir + '\img\wwc_counter.gif';
+    /// имя файла, выбранное в диалоговом окне
+    dlgFileName: string;
 
   public
-    constructor Create(name: string := 'Wireworld');
+    constructor Create;
     begin
-      self.name := name;
       vp := new Viewport;
-      vp.loadPicture(initFileName);
+      try
+        vp.loadPicture(initFileName);
+      except
+        vp.clear;
+      end;
+      fileName := initFileName;
+      name := ExtractFileName(fileName);
       setWindowTitle('> > > Для справки нажмите F1 ! < < <');
     end;
 
@@ -364,9 +371,10 @@ type
         '<Enter> - следующее поколение (один шаг)' + #10 +
         '<Delete> - очистить поле (сделать все клетки пустыми)' + #10 +
         '<Backspace> - удалить все сигналы (сделать сигналы проводниками)' + #10 +
-        '<Insert> - загрузить изображение из файла' + #10 +
+        '<Insert> - перезагрузить изображение' + #10 +
+        '<F2> - загрузить изображение из файла' + #10 +
         '<F3> - сохранить изображение в файл' + #10 +
-        '<F2> - запустить тесты производительности',
+        '<F12> - запустить тесты производительности',
         'Справка');
     end;
 
@@ -452,10 +460,34 @@ type
       repeat
         sleep(100);
       until task = 0;
-      if fileName.Length > 0 then
+      if dlgFileName.Length > 0 then
       begin
-        vp.loadPicture(fileName);
+        try
+          vp.loadPicture(dlgFileName);
+        except
+          on e: Exception do
+          begin
+            MessageBox.Show(e.Message, 'Ошибка при загрузке файла');
+            exit;
+          end;
+        end;
+        fileName := dlgFileName;
+        name := ExtractFileName(fileName);
+        skipFrames := 0;
+        vp.scaleTo1;
         setWindowTitle;
+      end;
+    end;
+
+    /// перезагрузить изображение
+    procedure reloadPicture;
+    begin
+      try
+        vp.loadPicture(fileName);
+        SetWindowTitle;
+      except
+        on e: Exception do
+          MessageBox.Show(e.Message, 'Ошибка при загрузке файла');
       end;
     end;
 
@@ -466,9 +498,20 @@ type
       repeat
         sleep(100);
       until task = 0;
-      if fileName.Length > 0 then
+      if dlgFileName.Length > 0 then
       begin
-        vp.savePicture(fileName);
+        try
+          vp.savePicture(dlgFileName);
+        except
+          on e: Exception do
+          begin
+            MessageBox.Show(e.Message, 'Ошибка при сохранении файла');
+            exit;
+          end;
+        end;
+        fileName := dlgFileName;
+        name := ExtractFileName(fileName);
+        setWindowTitle;
         MessageBox.Show('Сохранено в файл "' + fileName + '".', self.name);
       end
     end;
@@ -477,10 +520,20 @@ type
     procedure performanceTests;
     begin
       task := 3;
-      skipFrames := 0;
       // тест 1 (без рисования)
+      try
+        vp.loadPicture(initFileName);
+      except
+        on e: Exception do
+        begin
+          MessageBox.Show(e.Message, 'Ошибка при загрузке файла');
+          task := 0;
+          exit;
+        end;
+      end;
+      fileName := initFileName;
+      skipFrames := 0;
       vp.scaleTo1;
-      vp.loadPicture(initFileName);
       window.Title := 'Тест 1 запущен...';
       Milliseconds;
       loop 1000 do
@@ -488,7 +541,6 @@ type
       var t1 := MillisecondsDelta;
       // тест 2 (с рисованием)
       Application.DoEvents;
-      var n := name;
       name := 'Тест 2 запущен...';
       vp.loadPicture(initFileName);
       setWindowTitle;
@@ -510,7 +562,7 @@ type
         Application.DoEvents;
       end;
       var t3 := MillisecondsDelta;
-      name := n;
+      name := ExtractFileName(fileName);
       setWindowTitle;
       MessageBox.Show(
         'Тест 1 (1000 поколений без рисования) : ' + t1 / 1000 + ' с' + #10 +
@@ -559,9 +611,10 @@ type
           VK_Enter: nextGeneration;
           VK_Delete: clear;
           VK_Back: clearSignals;
-          VK_Insert: loadPicture;
+          VK_Insert: reloadPicture;
+          VK_F2: loadPicture;
           VK_F3: savePicture;
-          VK_F2: performanceTests;
+          VK_F12: performanceTests;
         end
     end;
 
@@ -577,11 +630,9 @@ type
       // Из-за особенностей реализации модуля GraphABC диалоги открытия и
       // сохранения файлов могут быть запущены только из основного потока
       var ofn := new OpenFileDialog;
-      ofn.InitialDirectory := imageDir;
       ofn.DefaultExt := '.gif';
       ofn.Filter := 'Изображения GIF (*.gif)|*.gif';
       var sfn := new SaveFileDialog;
-      sfn.InitialDirectory := ofn.InitialDirectory;
       sfn.DefaultExt := ofn.DefaultExt;
       sfn.Filter := ofn.Filter;
       while true do
@@ -589,18 +640,20 @@ type
         sleep(100);
         if task = 1 then
         begin
-          fileName := string.Empty;
+          dlgFileName := string.Empty;
           ofn.FileName := string.Empty;
+          ofn.InitialDirectory := ExtractFileDir(fileName);
           if DialogResult.OK = ofn.ShowDialog then
-            fileName := ofn.FileName;
+            dlgFileName := ofn.FileName;
           task := 0;
         end
         else if task = 2 then
         begin
-          fileName := string.Empty;
+          dlgFileName := string.Empty;
           sfn.FileName := string.Empty;
+          sfn.InitialDirectory := ExtractFileDir(fileName);
           if DialogResult.OK = sfn.ShowDialog then
-            fileName := sfn.FileName;
+            dlgFileName := sfn.FileName;
           task := 0;
         end;
       end;
