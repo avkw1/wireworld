@@ -171,6 +171,24 @@ type
         y0 := 0;
     end;
 
+    /// установить масштаб (размер клетки), изменить размер окна
+    procedure setScaleResizeWindow(cs: integer);
+    begin
+      x0 := 0;
+      y0 := 0;
+      cellSize := cs;
+      // если размер окна отличается от размера поля
+      if (width <> fieldWidth) or (height <> fieldHeight) then
+      begin
+        window.Normalize;
+        window.SetSize(fieldWidth, fieldHeight); // будет вызван resize -> draw
+        Application.DoEvents;
+        window.CenterOnScreen;
+      end
+      else
+        draw;
+    end;
+
   public
     /// один шаг (одно поколение)
     procedure nextGeneration(draw: boolean := true);
@@ -219,25 +237,27 @@ type
       p.Save(fname);
     end;
 
-    /// установить исходный масштаб (размер клетки 1) и положение (0, 0)
+    /// автоматически выбрать масштаб, изменить размер окна
+    procedure autoScale;
+    begin
+      var cs: integer := 1;
+      while cs <= maxCellSize do
+      begin
+        cs *= 2;
+        if (data.nCols * cs > ScreenWidth - 20) or
+          (data.nRows * cs > ScreenHeight - 100) then
+        begin
+          cs := cs div 2;
+          break;
+        end;
+      end;
+      setScaleResizeWindow(cs);
+    end;
+
+    /// установить масштаб 1:1 (размер клетки 1), изменить размер окна
     procedure scaleTo1;
     begin
-      var sizeChanged := (width <> data.nCols) or (height <> data.nRows);
-      if (cellSize <> 1) or (x0 <> 0) or (y0 <> 0) or sizeChanged then
-      begin
-        cellSize := 1;
-        x0 := 0;
-        y0 := 0;
-        // если размер окна изменён
-        if sizeChanged then
-        begin
-          // восстановить размер окна
-          window.Normalize;
-          window.SetSize(data.nCols, data.nRows); // будет вызван resize -> draw
-        end
-        else
-          draw;
-      end;
+      setScaleResizeWindow(1);
     end;
 
     /// увеличить масштаб
@@ -363,7 +383,8 @@ type
         '<-> - уменьшить пропуск рисования поколений' + #10 +
         '<PageUp> - увеличить масштаб' + #10 +
         '<PageDown> - уменьшить масштаб' + #10 +
-        '<Home> - восстановить начальный масштаб и размер окна' + #10 +
+        '<Home> - установить масштаб 1:1, изменить размер окна' + #10 +
+        '<End> - автоматически выбрать масштаб, изменить размер окна' + #10 +
         '<Стрелки> - сдвинуть область просмотра поля' + #10 +
         '<F1> - показать справку (это сообщение)' + #10 + #10 +
         'Только когда смена поколений остановлена:' + #10 + #10 +
@@ -474,7 +495,7 @@ type
         fileName := dlgFileName;
         name := ExtractFileName(fileName);
         skipFrames := 0;
-        vp.scaleTo1;
+        vp.autoScale;
         setWindowTitle;
       end;
     end;
@@ -605,6 +626,7 @@ type
         VK_Left: vp.move(vp.maxCellSize, 0);
         VK_Right: vp.move(-vp.maxCellSize, 0);
         VK_Home: vp.scaleTo1;
+        VK_End: vp.autoScale;
       end;
       if stop then
         case k of
