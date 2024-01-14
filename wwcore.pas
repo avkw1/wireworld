@@ -309,19 +309,17 @@ type
       // заполнение jMin и jMax
       for var i := 0 to iEnd do
       begin
+        jMin[i] := 0;
+        jMax[i] := -1;
         if (i < iMin) or (i > iMax) then
-        begin
-          jMin[i] := 0;
-          jMax[i] := -1;
           continue;
-        end;
         for var j := 0 to jEnd do
           if cells[i, j] <> nil then
           begin
             jMin[i] := j;
             break;
           end;
-        for var j := jEnd downto 0 do
+        for var j := jEnd downto jMin[i] do
           if cells[i, j] <> nil then
           begin
             jMax[i] := j;
