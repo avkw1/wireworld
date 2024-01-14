@@ -367,12 +367,16 @@ type
     /// установить заголовок окна
     procedure setWindowTitle(message: string := nil);
     begin
-      var t := name + ' ';
+      var t := name;
       if skipFrames > 0 then
-        t += '[Рисование 1/' + (skipFrames + 1) + '] ';
-      t += '[Поколение ' + vp.genNumber.ToString + '] ';
+        t += ' [Рисование 1/' + (skipFrames + 1) + ']';
+      t += ' [Поколение ' + vp.genNumber.ToString;
+      if stop then
+        t += ']'
+      else
+        t += '+]';
       if message <> nil then
-        t += message;
+        t += ' ' + message;
       window.Title := t;
     end;
 
@@ -409,6 +413,7 @@ type
       if stop then
       begin
         stop := false;
+        setWindowTitle;
         repeat
           loop skipFrames do
             vp.nextGeneration(false); // пропуск рисования
@@ -416,6 +421,7 @@ type
           setWindowTitle;
           Application.DoEvents;
         until stop;
+        setWindowTitle;
       end
       else
         stop := true;
