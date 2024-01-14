@@ -2,12 +2,6 @@
 
 uses wwcore, GraphABC, System.Windows.Forms;
 
-const
-  /// Количество строк поля
-  N = 600;
-  /// Количество столбцов поля
-  M = 800;
-
 type
   //////////////////////////////////////////////////////////////////////////////
   /// Область просмотра поля
@@ -328,6 +322,14 @@ type
   //////////////////////////////////////////////////////////////////////////////
   /// Управляющий класс
   Control = class
+  public
+    /// начальная ширина окна
+    static initWidth := 800;
+    /// начальная высота окна
+    static initHeight := 600;
+    /// имя файла с картинкой для инициализации и теста
+    static initFileName := GetCurrentDir + '\img\wwc_counter.gif';
+
   private
     /// название (для заголовка окна)
     name: string;
@@ -341,14 +343,16 @@ type
     task: integer;
     /// имя загруженного файла
     fileName: string;
-    /// имя файла с картинкой для инициализации и теста
-    initFileName := GetCurrentDir + '\img\wwc_counter.gif';
     /// имя файла, выбранное в диалоговом окне
     dlgFileName: string;
 
   public
     constructor Create;
     begin
+      window.Title := String.Empty;
+      window.SetSize(initWidth, initHeight);
+      window.CenterOnScreen;
+      SetSmoothingOff;
       vp := new Viewport;
       try
         vp.loadPicture(initFileName);
@@ -708,9 +712,6 @@ end;
 
 // Основная процедура
 begin
-  SetSmoothingOff;
-  window.SetSize(M, N);
-  window.CenterOnScreen;
   ctrl := new Control;
   OnMouseDown := mouseDown;
   OnKeyDown := keyDown;
