@@ -378,7 +378,7 @@ type
     /// установить заголовок окна
     procedure setWindowTitle(message: string := nil);
     begin
-      var t := name;
+      var t := name + ' [' + vp.cellSize + ':1]';
       if skipFrames > 0 then
         t += ' [Рисование 1/' + (skipFrames + 1) + ']';
       t += ' [Поколение ' + vp.genNumber.ToString;
@@ -471,6 +471,34 @@ type
         499: skipFrames := 199;
         999: skipFrames := 499;
       end;
+      setWindowTitle;
+    end;
+
+    /// увеличить масштаб
+    procedure scaleUp;
+    begin
+      vp.scaleUp(window.Width div 2, window.Height div 2);
+      setWindowTitle;
+    end;
+
+    /// уменьшить масштаб
+    procedure scaleDown;
+    begin
+      vp.scaleDown(window.Width div 2, window.Height div 2);
+      setWindowTitle;
+    end;
+
+    /// установить масштаб 1:1
+    procedure scaleTo1;
+    begin
+      vp.scaleTo1;
+      setWindowTitle;
+    end;
+
+    /// автовыбор масштаба
+    procedure autoScale;
+    begin
+      vp.autoScale;
       setWindowTitle;
     end;
 
@@ -640,14 +668,14 @@ type
         VK_Space: play;
         VK_Add: incSkipFrames;
         VK_Subtract: decSkipFrames;
-        VK_PageUp: vp.scaleUp(window.Width div 2, window.Height div 2);
-        VK_PageDown: vp.scaleDown(window.Width div 2, window.Height div 2);
+        VK_PageUp: scaleUp;
+        VK_PageDown: scaleDown;
         VK_Up: vp.move(0, vp.maxCellSize);
         VK_Down: vp.move(0, -vp.maxCellSize);
         VK_Left: vp.move(vp.maxCellSize, 0);
         VK_Right: vp.move(-vp.maxCellSize, 0);
-        VK_Home: vp.scaleTo1;
-        VK_End: vp.autoScale;
+        VK_Home: scaleTo1;
+        VK_End: autoScale;
       end;
       if stop then
         case k of
