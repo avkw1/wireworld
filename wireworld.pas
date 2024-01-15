@@ -42,6 +42,10 @@ type
     property fieldHeight: integer read data.nRows * cellSize;
 
   public
+    /// количество строк поля
+    property nRows: integer read data.nRows;
+    /// количество столбцов поля
+    property nCols: integer read data.nCols;
     /// номер поколения
     property genNumber: uint64 read data.genNumber;
 
@@ -346,6 +350,13 @@ type
     /// имя файла, выбранное в диалоговом окне
     dlgFileName: string;
 
+    /// установить имя файла и размер картинки для заголовка окна
+    procedure setFileNameAndSize;
+    begin
+      name := ExtractFileName(fileName);
+      name += ' [' + vp.nCols + 'x' + vp.nRows + ']';
+    end;
+
   public
     constructor Create;
     begin
@@ -360,7 +371,7 @@ type
         vp.clear;
       end;
       fileName := initFileName;
-      name := ExtractFileName(fileName);
+      setFileNameAndSize;
       setWindowTitle('> > > Для справки нажмите F1 ! < < <');
     end;
 
@@ -503,9 +514,9 @@ type
           end;
         end;
         fileName := dlgFileName;
-        name := ExtractFileName(fileName);
         skipFrames := 0;
         vp.autoScale;
+        setFileNameAndSize;
         setWindowTitle;
       end;
     end;
@@ -541,7 +552,7 @@ type
           end;
         end;
         fileName := dlgFileName;
-        name := ExtractFileName(fileName);
+        setFileNameAndSize;
         setWindowTitle;
         MessageBox.Show('Сохранено в файл "' + fileName + '".', self.name);
       end
@@ -593,7 +604,7 @@ type
         Application.DoEvents;
       end;
       var t3 := MillisecondsDelta;
-      name := ExtractFileName(fileName);
+      setFileNameAndSize;
       setWindowTitle;
       MessageBox.Show(
         'Тест 1 (1000 поколений без рисования) : ' + t1 / 1000 + ' с' + #10 +
