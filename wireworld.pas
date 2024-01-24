@@ -339,6 +339,8 @@ type
     name: string;
     /// область просмотра игрового поля
     vp: Viewport;
+    /// флаг разрешения редактирования
+    edit: boolean;
     /// флаг остановки
     stop: boolean := true;
     /// пропуск кадров (рисования поколений)
@@ -355,6 +357,15 @@ type
     begin
       name := ExtractFileName(fileName);
       name += ' [' + vp.nCols + 'x' + vp.nRows + ']';
+    end;
+
+    /// проверить флаг разрешения редактирования
+    function checkEdit: boolean;
+    begin
+      result := edit;
+      if not edit then
+        MessageBox.Show(
+          'Нажмите F4, чтобы разрешить редактирование изображения', self.name);
     end;
 
   public
@@ -383,7 +394,11 @@ type
         t += ' [Рисование 1/' + (skipFrames + 1) + ']';
       t += ' [Поколение ' + vp.genNumber.ToString;
       if stop then
-        t += ']'
+      begin
+        t += ']';
+        if edit then
+          t += ' [Редактирование]';
+      end
       else
         t += '+]';
       if message <> nil then
@@ -414,6 +429,7 @@ type
         '<Insert> - перезагрузить изображение' + #10 +
         '<F2> - загрузить изображение из файла' + #10 +
         '<F3> - сохранить изображение в файл' + #10 +
+        '<F4> - разрешить/запретить редактирование изображения' + #10 +
         '<F12> - запустить тесты производительности',
         'Справка');
     end;
@@ -512,15 +528,21 @@ type
     /// очистить поле (все клетки пустые)
     procedure clear;
     begin
-      vp.clear;
-      setWindowTitle;
+      if checkEdit then
+      begin
+        vp.clear;
+        setWindowTitle;
+      end;
     end;
 
     /// очистить сигналы
     procedure clearSignals;
     begin
-      vp.clearSignals;
-      setWindowTitle;
+      if checkEdit then
+      begin
+        vp.clearSignals;
+        setWindowTitle;
+      end;
     end;
 
     /// загрузить изображение
@@ -541,6 +563,7 @@ type
             exit;
           end;
         end;
+        edit := false;
         fileName := dlgFileName;
         skipFrames := 0;
         vp.autoScale;
@@ -554,6 +577,7 @@ type
     begin
       try
         vp.loadPicture(fileName);
+        edit := false;
         SetWindowTitle;
       except
         on e: Exception do
@@ -586,6 +610,13 @@ type
       end
     end;
 
+    /// Разрешить/запретить редактирование изображения
+    procedure toggleEdit;
+    begin
+      edit := not edit;
+      setWindowTitle;
+    end;
+
     /// выполнить тесты производительности
     procedure performanceTests;
     begin
@@ -601,6 +632,7 @@ type
           exit;
         end;
       end;
+      edit := false;
       fileName := initFileName;
       skipFrames := 0;
       vp.scaleTo1;
@@ -653,8 +685,11 @@ type
         exit;
       if stop then
       begin
-        vp.mouseDown(x, y, mb);
-        setWindowTitle;
+        if checkEdit then
+        begin
+          vp.mouseDown(x, y, mb);
+          setWindowTitle;
+        end;
       end;
     end;
 
@@ -685,6 +720,7 @@ type
           VK_Insert: reloadPicture;
           VK_F2: loadPicture;
           VK_F3: savePicture;
+          VK_F4: toggleEdit;
           VK_F12: performanceTests;
         end
     end;
