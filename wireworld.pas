@@ -645,6 +645,7 @@ type
       Application.DoEvents;
       name := 'Тест 2 запущен...';
       vp.loadPicture(initFileName);
+      stop := false;
       setWindowTitle;
       Milliseconds;
       loop 1000 do
@@ -656,6 +657,7 @@ type
       var t2 := MillisecondsDelta;
       // тест 3 (полная перерисовка - Viewport.draw)
       name := 'Тест 3 запущен...';
+      stop := true;
       setWindowTitle;
       Milliseconds;
       loop 100 do
