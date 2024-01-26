@@ -480,6 +480,12 @@ type
         191: skipFrames := 199;
         199: skipFrames := 499;
         499: skipFrames := 999;
+        999: skipFrames := 1151;
+        1151: skipFrames := 1999;
+        1999: skipFrames := 2303;
+        2303: skipFrames := 3839;
+        3839: skipFrames := 4999;
+        4999: skipFrames := 9999;
       end;
       setWindowTitle;
     end;
@@ -498,6 +504,12 @@ type
         199: skipFrames := 191;
         499: skipFrames := 199;
         999: skipFrames := 499;
+        1151: skipFrames := 999;
+        1999: skipFrames := 1151;
+        2303: skipFrames := 1999;
+        3839: skipFrames := 2303;
+        4999: skipFrames := 3839;
+        9999: skipFrames := 4999;
       end;
       setWindowTitle;
     end;
