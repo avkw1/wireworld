@@ -324,6 +324,18 @@ type
   end;
 
   //////////////////////////////////////////////////////////////////////////////
+  /// Задача для управляющего класса (перечислимый тип)
+  ControlTask = (
+    /// нет задачи
+    noTask,
+    /// открыть файл
+    fileOpen,
+    /// сохранить файл
+    fileSave,
+    /// запуск теста
+    test);
+
+  //////////////////////////////////////////////////////////////////////////////
   /// Управляющий класс
   Control = class
   public
@@ -346,7 +358,7 @@ type
     /// пропуск кадров (рисования поколений)
     skipFrames: integer;
     /// задача для основного потока или запуск теста
-    task: integer;
+    task: ControlTask;
     /// имя загруженного файла
     fileName: string;
     /// имя файла, выбранное в диалоговом окне
@@ -548,10 +560,10 @@ type
     /// загрузить изображение
     procedure loadPicture;
     begin
-      task := 1;
+      task := fileOpen;
       repeat
         sleep(100);
-      until task = 0;
+      until task = noTask;
       if dlgFileName.Length > 0 then
       begin
         try
@@ -588,10 +600,10 @@ type
     /// сохранить изображение
     procedure savePicture;
     begin
-      task := 2;
+      task := fileSave;
       repeat
         sleep(100);
-      until task = 0;
+      until task = noTask;
       if dlgFileName.Length > 0 then
       begin
         try
@@ -620,7 +632,7 @@ type
     /// выполнить тесты производительности
     procedure performanceTests;
     begin
-      task := 3;
+      task := test;
       // тест 1 (без рисования)
       try
         vp.loadPicture(initFileName);
@@ -628,7 +640,7 @@ type
         on e: Exception do
         begin
           MessageBox.Show(e.Message, 'Ошибка при загрузке файла');
-          task := 0;
+          task := noTask;
           exit;
         end;
       end;
@@ -677,13 +689,13 @@ type
         'Скорость п.перерисовки : ' + 6000000 div t3 +
         ' кадров в минуту (' + round(100000 / t3, 2) + ' к/с)' +  #10,
         'Результаты тестов производительности');
-      task := 0;
+      task := noTask;
     end;
 
     /// обработчик мышки
     procedure mouseDown(x, y, mb: integer);
     begin
-      if task <> 0 then
+      if task <> noTask then
         exit;
       if stop then
       begin
@@ -698,7 +710,7 @@ type
     /// обработчик клавиатуры
     procedure keyDown(k: integer);
     begin
-      if task <> 0 then
+      if task <> noTask then
         exit;
       case k of
         VK_F1: help;
@@ -747,23 +759,23 @@ type
       while true do
       begin
         sleep(100);
-        if task = 1 then
+        if task = fileOpen then
         begin
           dlgFileName := string.Empty;
           ofn.FileName := string.Empty;
           ofn.InitialDirectory := ExtractFileDir(fileName);
           if DialogResult.OK = ofn.ShowDialog then
             dlgFileName := ofn.FileName;
-          task := 0;
+          task := noTask;
         end
-        else if task = 2 then
+        else if task = fileSave then
         begin
           dlgFileName := string.Empty;
           sfn.FileName := string.Empty;
           sfn.InitialDirectory := ExtractFileDir(fileName);
           if DialogResult.OK = sfn.ShowDialog then
             dlgFileName := sfn.FileName;
-          task := 0;
+          task := noTask;
         end;
       end;
     end;
